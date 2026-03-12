@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const isDev = process.env.NODE_ENV === "development";
+const isDev = "development" === process.env.NODE_ENV;
 const useSandbox = true;
 const useWebSecurity = false; // !isDev;
 
@@ -62,7 +62,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("activate", () => {
-	if (BrowserWindow.getAllWindows().length === 0) {
+	if (0 === BrowserWindow.getAllWindows().length) {
 		createWindow();
 	}
 });

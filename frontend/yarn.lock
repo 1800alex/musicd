@@ -9087,6 +9087,49 @@ __metadata:
   languageName: node
   linkType: hard
 
+"musicd-frontend@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "musicd-frontend@workspace:."
+  dependencies:
+    "@capacitor/android": "npm:^8.2.0"
+    "@capacitor/app": "npm:^8.0.1"
+    "@capacitor/cli": "npm:^8.2.0"
+    "@capacitor/core": "npm:^8.2.0"
+    "@capacitor/ios": "npm:^8.2.0"
+    "@fortawesome/fontawesome-svg-core": "npm:^6.7.2"
+    "@fortawesome/free-brands-svg-icons": "npm:^6.7.2"
+    "@fortawesome/free-solid-svg-icons": "npm:^6.7.2"
+    "@fortawesome/vue-fontawesome": "npm:^3.0.8"
+    "@mdi/js": "npm:^7.4.47"
+    "@nuxt/eslint": "npm:^1.7.1"
+    "@nuxt/fonts": "npm:^0.11.4"
+    "@pinia/nuxt": "npm:^0.11.2"
+    "@playwright/test": "npm:^1.58.2"
+    "@steeringwaves/eslint-config": "npm:^2.1.4"
+    "@steeringwaves/prettier-config": "npm:^1.0.2"
+    "@types/lodash-es": "npm:^4.17.12"
+    "@types/node": "npm:^22.16.5"
+    "@types/zxcvbn": "npm:^4.4.5"
+    buefy: "npm:^3.0.2"
+    bulma: "npm:^1.0.4"
+    electron: "npm:^41.0.0"
+    electron-builder: "npm:^26.8.1"
+    electron-serve: "npm:^3.0.1"
+    eslint: "npm:^9.22.0"
+    lodash-es: "npm:^4.17.21"
+    nuxt: "npm:^4.0.1"
+    pinia: "npm:^3.0.3"
+    prettier: "npm:^3.5.3"
+    sass-embedded: "npm:^1.89.2"
+    typescript: "npm:^5.8.3"
+    vue: "npm:^3.5.18"
+    vue-component-type-helpers: "npm:^3.0.4"
+    vue-router: "npm:^4.5.1"
+    vue-tsc: "npm:^3.0.4"
+    zxcvbn: "npm:^4.4.2"
+  languageName: unknown
+  linkType: soft
+
 "nanoid@npm:^3.3.11":
   version: 3.3.11
   resolution: "nanoid@npm:3.3.11"
@@ -9432,49 +9475,6 @@ __metadata:
   checksum: 10c0/5fee7ff309727763689cfad844d979aedd2204a817fbaaf0e1603794a7c20db28548d7b024692f953557df6ce4a0ee4ae46cd8ebd9b36cfb300b9226b567c479
   languageName: node
   linkType: hard
-
-"nuxt-app@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "nuxt-app@workspace:."
-  dependencies:
-    "@capacitor/android": "npm:^8.2.0"
-    "@capacitor/app": "npm:^8.0.1"
-    "@capacitor/cli": "npm:^8.2.0"
-    "@capacitor/core": "npm:^8.2.0"
-    "@capacitor/ios": "npm:^8.2.0"
-    "@fortawesome/fontawesome-svg-core": "npm:^6.7.2"
-    "@fortawesome/free-brands-svg-icons": "npm:^6.7.2"
-    "@fortawesome/free-solid-svg-icons": "npm:^6.7.2"
-    "@fortawesome/vue-fontawesome": "npm:^3.0.8"
-    "@mdi/js": "npm:^7.4.47"
-    "@nuxt/eslint": "npm:^1.7.1"
-    "@nuxt/fonts": "npm:^0.11.4"
-    "@pinia/nuxt": "npm:^0.11.2"
-    "@playwright/test": "npm:^1.58.2"
-    "@steeringwaves/eslint-config": "npm:^2.1.4"
-    "@steeringwaves/prettier-config": "npm:^1.0.2"
-    "@types/lodash-es": "npm:^4.17.12"
-    "@types/node": "npm:^22.16.5"
-    "@types/zxcvbn": "npm:^4.4.5"
-    buefy: "npm:^3.0.2"
-    bulma: "npm:^1.0.4"
-    electron: "npm:^41.0.0"
-    electron-builder: "npm:^26.8.1"
-    electron-serve: "npm:^3.0.1"
-    eslint: "npm:^9.22.0"
-    lodash-es: "npm:^4.17.21"
-    nuxt: "npm:^4.0.1"
-    pinia: "npm:^3.0.3"
-    prettier: "npm:^3.5.3"
-    sass-embedded: "npm:^1.89.2"
-    typescript: "npm:^5.8.3"
-    vue: "npm:^3.5.18"
-    vue-component-type-helpers: "npm:^3.0.4"
-    vue-router: "npm:^4.5.1"
-    vue-tsc: "npm:^3.0.4"
-    zxcvbn: "npm:^4.4.2"
-  languageName: unknown
-  linkType: soft
 
 "nuxt@npm:^4.0.1":
   version: 4.3.1

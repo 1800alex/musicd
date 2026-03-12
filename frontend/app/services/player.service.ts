@@ -236,7 +236,7 @@ class PlayerService {
 
 		if (track && this.appState.AudioElement) {
 			const baseURL = isNativeOrElectron() ? resolveBaseURL().replace(/\/$/, "") : "";
-		this.appState.AudioElement.src = `${baseURL}/api/music/${track.file_path}`;
+			this.appState.AudioElement.src = `${baseURL}/api/music/${track.file_path}`;
 			if (this.appState.IsPlaying) {
 				this.appState.AudioElement.play().catch((error) => {
 					console.error("Error playing audio:", error);
