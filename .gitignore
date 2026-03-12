@@ -1,0 +1,8 @@
+# Build output
+/build/
+/dist/
+/bin/
+/cmd/musicd/ui/
+
+# Docker volumes
+postgres_data/
