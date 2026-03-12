@@ -1,0 +1,559 @@
+@use "sass:color";
+/** https://colorffy.com/dark-theme-generator?colors=85A8CC-121212&success=22946E&warning=A87A2A&danger=9C2121&info=21498A&primaryCount=10&surfaceCount=10 **/
+
+/** Base colors */
+$clr-dark-a0: #000000;
+$clr-light-a0: #ffffff;
+
+/** Theme primary colors */
+$clr-primary-a0: #85a8cc;
+$clr-primary-a10: #93b1d2;
+$clr-primary-a20: #a1bbd7;
+$clr-primary-a30: #aec4dd;
+$clr-primary-a40: #bccee3;
+$clr-primary-a50: #c9d7e8;
+$clr-primary-a60: #d6e1ee;
+$clr-primary-a70: #e4ebf4;
+$clr-primary-a80: #f1f5f9;
+$clr-primary-a90: #ffffff;
+
+/** Theme surface colors */
+$clr-surface-a0: #121212;
+$clr-surface-a10: #282828;
+$clr-surface-a20: #3f3f3f;
+$clr-surface-a30: #575757;
+$clr-surface-a40: #717171;
+$clr-surface-a50: #8b8b8b;
+$clr-surface-a60: #a7a7a7;
+$clr-surface-a70: #c4c4c4;
+$clr-surface-a80: #e1e1e1;
+$clr-surface-a90: #ffffff;
+
+/** Theme tonal surface colors */
+$clr-surface-tonal-a0: #1d1f22;
+$clr-surface-tonal-a10: #323437;
+$clr-surface-tonal-a20: #484a4c;
+$clr-surface-tonal-a30: #606163;
+$clr-surface-tonal-a40: #78797b;
+$clr-surface-tonal-a50: #919394;
+$clr-surface-tonal-a60: #acadae;
+$clr-surface-tonal-a70: #c7c7c8;
+$clr-surface-tonal-a80: #e3e3e3;
+$clr-surface-tonal-a90: #ffffff;
+
+/** Success colors */
+$clr-success-a0: #22946e;
+$clr-success-a10: #47d5a6;
+$clr-success-a20: #9ae8ce;
+
+/** Warning colors */
+$clr-warning-a0: #a87a2a;
+$clr-warning-a10: #d7ac61;
+$clr-warning-a20: #ecd7b2;
+
+/** Danger colors */
+$clr-danger-a0: #9c2121;
+$clr-danger-a10: #d94a4a;
+$clr-danger-a20: #eb9e9e;
+
+/** Info colors */
+$clr-info-a0: #21498a;
+$clr-info-a10: #4077d1;
+$clr-info-a20: #92b2e5;
+
+/** Examples */
+.bg-primary {
+	color: $clr-primary-a50;
+	background-color: $clr-surface-a0;
+}
+
+/** CSS Custom Properties for dynamic theming */
+:root {
+	// Primary theme colors
+	--clr-primary: #{$clr-primary-a0};
+	--clr-primary-light: #{$clr-primary-a20};
+	--clr-primary-dark: #{color.adjust($clr-primary-a0, $lightness: -10%)};
+
+	// Surface colors
+	--clr-surface-base: #{$clr-surface-a0};
+	--clr-surface-elevated: #{$clr-surface-a10};
+	--clr-surface-higher: #{$clr-surface-a20};
+
+	// Status colors
+	--clr-success: #{$clr-success-a0};
+	--clr-warning: #{$clr-warning-a0};
+	--clr-danger: #{$clr-danger-a0};
+	--clr-info: #{$clr-info-a0};
+
+	// Text colors
+	--clr-text-primary: #{$clr-light-a0};
+	--clr-text-secondary: #{$clr-surface-a50};
+	--clr-text-muted: #{$clr-surface-a40};
+}
+
+/** Override Bulma variables with theme colors */
+$primary: $clr-primary-a0;
+$success: $clr-success-a0;
+$warning: $clr-warning-a0;
+$danger: $clr-danger-a0;
+$info: $clr-info-a0;
+
+$dark: $clr-surface-a0;
+$light: $clr-light-a0;
+$black: $clr-dark-a0;
+
+$body-background-color: $clr-surface-a0;
+$text: $clr-light-a0;
+$text-light: $clr-surface-a40;
+$text-strong: $clr-light-a0;
+
+/** Music App Branded Components */
+.music-app {
+	background-color: var(--clr-surface-base);
+	color: var(--clr-text-primary);
+
+	// Navbar theming — clean, flat look matching the player aesthetic
+	.navbar {
+		background-color: $clr-surface-a10 !important;
+		border-bottom: none;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+
+		.navbar-item {
+			color: $clr-light-a0;
+			transition:
+				background-color 0.15s ease,
+				color 0.15s ease;
+
+			&:hover {
+				background-color: $clr-surface-a20;
+				color: $clr-primary-a10;
+			}
+
+			&.is-active {
+				color: $clr-primary-a0;
+				background-color: transparent;
+			}
+
+			&.navbar-item-no-hover {
+				background-color: transparent !important;
+			}
+		}
+
+		.navbar-link {
+			color: $clr-light-a0;
+			transition:
+				background-color 0.15s ease,
+				color 0.15s ease;
+
+			&::after {
+				border-color: $clr-surface-a50;
+			}
+
+			&:hover {
+				color: $clr-primary-a10;
+				background-color: $clr-surface-a20;
+
+				&::after {
+					border-color: $clr-primary-a10;
+				}
+			}
+		}
+
+		.navbar-dropdown {
+			background-color: $clr-surface-a10;
+			border: 1px solid $clr-surface-a20;
+			border-radius: 8px;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+			overflow: hidden;
+			padding: 0.25rem 0;
+
+			.navbar-item {
+				color: $clr-light-a0;
+				font-size: 0.9rem;
+				padding: 0.5rem 1rem;
+				transition: background-color 0.15s ease;
+
+				&:hover {
+					background-color: $clr-surface-a20;
+					color: $clr-light-a0;
+				}
+			}
+
+			.navbar-divider {
+				background-color: $clr-surface-a20;
+				margin: 0.25rem 0;
+				height: 1px;
+			}
+		}
+	}
+
+	// Button theming
+	.button {
+		&.is-primary {
+			background-color: $clr-primary-a0;
+			border-color: $clr-primary-a0;
+
+			&:hover {
+				background-color: $clr-primary-a10;
+				border-color: $clr-primary-a10;
+			}
+
+			&:active {
+				background-color: color.adjust($clr-primary-a0, $lightness: -5%);
+			}
+		}
+
+		&.is-success {
+			background-color: $clr-success-a0;
+			border-color: $clr-success-a0;
+		}
+
+		&.is-warning {
+			background-color: $clr-warning-a0;
+			border-color: $clr-warning-a0;
+
+			&:hover {
+				background-color: color.adjust($clr-warning-a0, $lightness: 10%);
+				border-color: color.adjust($clr-warning-a0, $lightness: 10%);
+			}
+		}
+
+		&.is-danger {
+			background-color: $clr-danger-a0;
+			border-color: $clr-danger-a0;
+		}
+
+		&.is-dark {
+			background-color: $clr-surface-a20;
+			border-color: $clr-surface-a30;
+			color: $clr-light-a0;
+
+			&:hover {
+				background-color: $clr-surface-a30;
+				border-color: $clr-surface-a40;
+			}
+		}
+
+		&.is-info {
+			background-color: $clr-info-a0;
+			border-color: $clr-info-a0;
+
+			&:hover {
+				background-color: color.adjust($clr-info-a0, $lightness: 10%);
+				border-color: color.adjust($clr-info-a0, $lightness: 10%);
+			}
+		}
+	}
+
+	// Audio player theming — clean flat style matching mobile player
+	.audio-player {
+		background: $clr-surface-a10 !important;
+		border-top: none;
+		box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+
+		.clickable-cover {
+			cursor: pointer;
+			transition: transform 0.2s ease;
+		}
+
+		.clickable-cover:hover {
+			transform: scale(1.05);
+		}
+
+		.clickable-artist {
+			cursor: pointer;
+			transition: color 0.2s ease;
+		}
+
+		.clickable-artist:hover {
+			color: $clr-primary-a20 !important;
+		}
+
+		.volume-icon:hover {
+			color: $clr-primary-a0 !important;
+		}
+	}
+
+	// Progress bar theming
+	.progress-bar {
+		background: $clr-surface-a30 !important;
+
+		&::-webkit-slider-thumb {
+			background: $clr-primary-a0 !important;
+		}
+
+		&::-moz-range-thumb {
+			background: $clr-primary-a0 !important;
+		}
+
+		// Progress bar fill styling
+		background: linear-gradient(
+			to right,
+			$clr-primary-a0 0%,
+			$clr-primary-a0 var(--progress-percent, 0%),
+			$clr-surface-a30 var(--progress-percent, 0%),
+			$clr-surface-a30 100%
+		) !important;
+	}
+
+	// Volume slider theming (match progress bar styling)
+	.slider {
+		background: $clr-surface-a30 !important;
+		outline: none;
+		border-radius: 2px;
+		appearance: none;
+		cursor: pointer;
+
+		&::-webkit-slider-thumb {
+			appearance: none;
+			width: 12px;
+			height: 12px;
+			border-radius: 50%;
+			background: $clr-primary-a0 !important;
+			cursor: pointer;
+		}
+
+		&::-moz-range-thumb {
+			width: 12px;
+			height: 12px;
+			border-radius: 50%;
+			background: $clr-primary-a0 !important;
+			cursor: pointer;
+			border: none;
+		}
+
+		// Volume slider fill
+		background: linear-gradient(
+			to right,
+			$clr-primary-a0 0%,
+			$clr-primary-a0 var(--volume-percent, 50%),
+			$clr-surface-a30 var(--volume-percent, 50%),
+			$clr-surface-a30 100%
+		) !important;
+	}
+
+	// Track list theming
+	.track-row {
+		&:hover {
+			background-color: rgba($clr-primary-a0, 0.1) !important;
+		}
+
+		&.currently-playing {
+			background-color: rgba($clr-primary-a0, 0.2) !important;
+			border-left-color: $clr-primary-a0;
+		}
+
+		&.currently-playing:hover {
+			background-color: rgba($clr-primary-a0, 0.3) !important;
+		}
+	}
+
+	.clickable-link {
+		cursor: pointer;
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+			color: $clr-primary-a10 !important;
+		}
+	}
+
+	// Table theming
+	.table {
+		background-color: transparent;
+		color: $clr-light-a0;
+
+		th {
+			background-color: $clr-surface-a10;
+			color: $clr-light-a0;
+			border-bottom: 2px solid $clr-primary-a0;
+		}
+
+		td {
+			border-bottom: 1px solid $clr-surface-a20;
+		}
+	}
+
+	// Modal theming — custom modals
+	.playlist-modal-content,
+	.confirmation-dialog-content {
+		background: linear-gradient(135deg, $clr-surface-a10 0%, $clr-surface-a20 100%) !important;
+		border: 1px solid $clr-surface-a30;
+	}
+
+	// Modal theming — Bulma modals
+	.modal-card {
+		border-radius: 12px;
+		overflow: hidden;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+	}
+
+	.modal-card-head {
+		background-color: $clr-surface-a10;
+		border-bottom: 1px solid $clr-surface-a30;
+		padding: 1rem 1.25rem;
+
+		.modal-card-title {
+			color: $clr-light-a0;
+			font-weight: 600;
+		}
+	}
+
+	.modal-card-body {
+		background-color: $clr-surface-a10;
+		color: $clr-light-a0;
+
+		.label {
+			color: $clr-surface-a60;
+		}
+
+		.has-text-grey {
+			color: $clr-surface-a50 !important;
+		}
+
+		// Warning notification inside modals
+		.notification.is-warning {
+			background-color: rgba($clr-warning-a0, 0.15);
+			color: $clr-warning-a10;
+			border: 1px solid rgba($clr-warning-a0, 0.3);
+		}
+	}
+
+	.modal-card-foot {
+		background-color: $clr-surface-a10;
+		border-top: 1px solid $clr-surface-a30;
+		padding: 0.75rem 1.25rem;
+
+		.button {
+			border-radius: 999px;
+			font-weight: 500;
+			padding: 0.4rem 1.2rem;
+			border: none;
+			transition: background-color 0.15s ease;
+
+			&:not(.is-primary):not(.is-success):not(.is-danger):not(.is-warning):not(.is-info) {
+				background-color: $clr-surface-a20;
+				color: $clr-light-a0;
+
+				&:hover {
+					background-color: $clr-surface-a30;
+				}
+			}
+
+			&.is-primary {
+				background-color: $clr-primary-a0;
+				color: $clr-dark-a0;
+
+				&:hover {
+					background-color: $clr-primary-a10;
+				}
+			}
+		}
+	}
+
+	// Input theming
+	.input,
+	.select select {
+		background-color: $clr-surface-a20;
+		border-color: $clr-surface-a30;
+		color: $clr-light-a0;
+
+		&:focus {
+			border-color: $clr-primary-a0;
+			box-shadow: 0 0 0 0.125em rgba($clr-primary-a0, 0.25);
+		}
+
+		&::placeholder {
+			color: $clr-surface-a40;
+		}
+	}
+
+	// Dropdown theming
+	.dropdown {
+		.dropdown-content {
+			background-color: $clr-surface-a10;
+			border: 1px solid $clr-surface-a20;
+
+			.dropdown-item {
+				color: $clr-light-a0;
+
+				&:hover {
+					background-color: $clr-surface-a20;
+					color: $clr-primary-a20;
+				}
+			}
+		}
+	}
+
+	// Pagination theming
+	.pagination {
+		.pagination-link,
+		.pagination-previous,
+		.pagination-next {
+			background-color: $clr-surface-a20;
+			border-color: $clr-surface-a30;
+			color: $clr-light-a0;
+
+			&:hover {
+				background-color: $clr-surface-a30;
+				border-color: $clr-primary-a0;
+				color: $clr-primary-a20;
+			}
+
+			&.is-current {
+				background-color: $clr-primary-a0;
+				border-color: $clr-primary-a0;
+			}
+		}
+	}
+}
+
+/** Utility Classes */
+.text-primary {
+	color: var(--clr-primary) !important;
+}
+.text-success {
+	color: var(--clr-success) !important;
+}
+.text-warning {
+	color: var(--clr-warning) !important;
+}
+.text-danger {
+	color: var(--clr-danger) !important;
+}
+.text-muted {
+	color: var(--clr-text-muted) !important;
+}
+
+.bg-primary {
+	background-color: var(--clr-primary) !important;
+}
+.bg-surface {
+	background-color: var(--clr-surface-base) !important;
+}
+.bg-surface-elevated {
+	background-color: var(--clr-surface-elevated) !important;
+}
+
+.border-primary {
+	border-color: var(--clr-primary) !important;
+}
+
+/** Branded scrollbars */
+.music-app ::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+.music-app ::-webkit-scrollbar-track {
+	background: $clr-surface-a10;
+}
+
+.music-app ::-webkit-scrollbar-thumb {
+	background: $clr-surface-a30;
+	border-radius: 4px;
+
+	&:hover {
+		background: $clr-primary-a0;
+	}
+}
