@@ -1,0 +1,6 @@
+node_modules/
+bin/
+cmd/musicd/ui/
+frontend/node_modules/
+frontend/.output/
+frontend/.nuxt/
