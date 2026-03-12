@@ -1,10 +1,10 @@
 {
-	"name": "nuxt-app",
+	"name": "musicd-frontend",
 	"private": true,
 	"type": "module",
 	"main": "electron/dist/main.js",
 	"author": "placeholder@example.com",
-	"homepage": "https://github.com",
+	"homepage": "https://github.com/1800alex/musicd",
 	"description": "A music streaming web application built with Nuxt.js, featuring a responsive design, native audio support, and integration with Capacitor for mobile platforms and Electron for desktop.",
 	"version": "0.0.1",
 	"scripts": {
