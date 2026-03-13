@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for musicd
 # Stage 1: Build the frontend using Node.js
-FROM node:20-alpine AS frontend-builder
+FROM node:24-alpine AS frontend-builder
 
 # Enable corepack for yarn support
 RUN corepack enable
@@ -41,7 +41,7 @@ COPY --from=frontend-builder /app/frontend/.output/public/ ./cmd/musicd/ui/
 
 # Build the Go application (equivalent to: mkdir -p ./bin && go build -o ./bin/musicd ./cmd/musicd)
 RUN mkdir -p ./bin && \
-    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o ./bin/musicd ./cmd/musicd
+    CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -ldflags="-w -s" -o ./bin/musicd ./cmd/musicd
 
 # Stage 3: Final runtime image
 FROM alpine:latest

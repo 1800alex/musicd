@@ -15,7 +15,7 @@ COPY . .
 
 # Build statically-linked binary
 RUN mkdir -p ./bin && \
-    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o ./bin/musicplayerd ./cmd/musicplayerd
+    CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -ldflags="-w -s" -o ./bin/musicplayerd ./cmd/musicplayerd
 
 # Stage 2: Runtime image with mpv and ffmpeg
 FROM alpine:latest
