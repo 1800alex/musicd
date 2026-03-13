@@ -168,6 +168,14 @@ cap-build: frontend
 cap-sync:
 	@cd ./frontend && npx cap sync
 
+.PHONY: cap-sync-android
+cap-sync-android:
+	@cd ./frontend && npx cap sync android
+
+.PHONY: cap-sync-ios
+cap-sync-ios:
+	@cd ./frontend && npx cap sync ios
+
 # Capacitor - open iOS project in Xcode
 .PHONY: cap-open-ios
 cap-open-ios:

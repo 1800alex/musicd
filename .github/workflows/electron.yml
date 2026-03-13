@@ -3,7 +3,7 @@ name: Build Electron Apps
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build:
@@ -11,40 +11,40 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact: '*.AppImage'
-            artifact_name: 'musicd-linux'
+            artifact: "*.AppImage"
+            artifact_name: "musicd-linux"
           - os: windows-latest
-            artifact: '*.exe'
-            artifact_name: 'musicd-windows'
+            artifact: "*.exe"
+            artifact_name: "musicd-windows"
           - os: macos-latest
-            artifact: '*.dmg'
-            artifact_name: 'musicd-macos'
+            artifact: "*.dmg"
+            artifact_name: "musicd-macos"
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 1
+
+      - name: Git LFS Pull
+        run: git lfs pull
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "24"
 
       - name: Enable Corepack
         run: corepack enable
 
-      - name: Install dependencies
-        run: |
-          cd frontend
-          corepack yarn install
+      - name: Generate Nuxt static output
+        run: make frontend
 
       - name: Build Electron app
-        run: |
-          cd frontend
-          corepack yarn electron:build
-        env:
-          ELECTRON_BUILD: '1'
+        run: make electron-build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -62,6 +62,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 1
+
+      - name: Git LFS Pull
+        run: git lfs pull
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4

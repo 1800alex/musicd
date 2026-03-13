@@ -3,7 +3,7 @@ name: Build iOS App
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build:
@@ -14,29 +14,26 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 1
+
+      - name: Git LFS Pull
+        run: git lfs pull
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "24"
 
       - name: Enable Corepack
         run: corepack enable
 
-      - name: Install frontend dependencies
-        run: |
-          cd frontend
-          corepack yarn install
-
       - name: Generate Nuxt static output
-        run: |
-          cd frontend
-          corepack yarn generate
+        run: make frontend
 
       - name: Sync Capacitor to iOS
-        run: |
-          cd frontend
-          npx cap sync ios
+        run: make cap-sync-ios
 
       - name: Build iOS archive
         run: |
