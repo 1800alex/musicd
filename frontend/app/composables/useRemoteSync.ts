@@ -304,26 +304,43 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 		],
 		() => {
 			if (stateDebounceTimer) clearTimeout(stateDebounceTimer);
+			// Increased debounce to 500ms to reduce update frequency during playback
 			stateDebounceTimer = setTimeout(() => {
 				sendStateUpdate();
-			}, 200);
+			}, 500);
 		}
 	);
 
 	// Watch audio element currentTime
+	let timeUpdateHandler: (() => void) | null = null;
+	let lastTimeSent = 0;
 	const setupAudioTimeTracking = () => {
 		if (!audioEl.value) return;
 
-		audioEl.value.addEventListener("timeupdate", () => {
-			// Send update every 5 seconds or on significant change
-			if (stateDebounceTimer) clearTimeout(stateDebounceTimer);
-			stateDebounceTimer = setTimeout(() => {
-				sendStateUpdate();
-			}, 200);
-		});
+		// Remove old listener if it exists (prevent duplicate listeners)
+		if (timeUpdateHandler && audioEl.value) {
+			audioEl.value.removeEventListener("timeupdate", timeUpdateHandler);
+		}
+
+		// Create and store the handler so we can remove it later
+		timeUpdateHandler = () => {
+			// Throttle: only update every 5 seconds during playback to reduce CPU usage
+			const now = Date.now();
+			if (now - lastTimeSent < 5000) {
+				return;
+			}
+			lastTimeSent = now;
+			sendStateUpdate();
+		};
+
+		audioEl.value.addEventListener("timeupdate", timeUpdateHandler);
 	};
 
 	onBeforeUnmount(() => {
+		// Remove timeupdate listener
+		if (timeUpdateHandler && audioEl.value) {
+			audioEl.value.removeEventListener("timeupdate", timeUpdateHandler);
+		}
 		disconnectWebSocket();
 	});
 
