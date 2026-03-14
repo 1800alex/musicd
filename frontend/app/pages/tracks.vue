@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, inject } from "vue";
+import { ref, computed, onMounted, watch, inject } from "vue";
 import type { Track, Playlist } from "~/types";
 import useAppState, { RepeatMode } from "~/stores/appState";
 import awaitAppState from "~/composables/awaitAppState";
 import backendService from "~/services/backend.service";
 import PlayerService from "~/services/player.service";
+import { useToast } from "~/composables/useToast";
 
 // Page metadata
 useHead({
@@ -24,6 +25,8 @@ const loading = ref(false);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const searchQuery = ref("");
+const showDuplicateConfirm = ref(false);
+const pendingTrackAdd = ref<{ track: Track; playlistName: string } | null>(null);
 
 // Methods
 const fetchTracks = async () => {
@@ -87,22 +90,82 @@ const handleAddToQueue = (track: Track) => {
 };
 
 const handleAddToPlaylist = async (track: Track, playlistName: string) => {
+	const { showSuccess, showError } = useToast();
+
 	try {
 		// Find the playlist ID from the name
 		const targetPlaylist = appState.Playlists.find((p: Playlist) => p.name === playlistName);
 		if (!targetPlaylist) {
 			console.error(`Playlist "${playlistName}" not found`);
+			showError(`Playlist "${playlistName}" not found`);
+			return;
+		}
+
+		// Fetch current playlist tracks to check for duplicates
+		const playlistTracks = await backendService.FetchPlaylistTracks(targetPlaylist.id, {
+			pageSize: 1000
+		});
+
+		const isDuplicate = playlistTracks.data.some(
+			(t) => t.id === track.id || (t.title === track.title && t.artist === track.artist)
+		);
+
+		if (isDuplicate) {
+			// Show confirmation modal for duplicate
+			pendingTrackAdd.value = { track, playlistName };
+			showDuplicateConfirm.value = true;
 			return;
 		}
 
 		await backendService.AddTrackToPlaylistById(track.id, targetPlaylist.id);
-		// TODO: Show success notification
+		showSuccess(`Added "${track.title}" to playlist "${playlistName}"`);
 		console.log(`Added "${track.title}" to playlist "${playlistName}"`);
 	} catch (error) {
 		console.error("Error adding track to playlist:", error);
-		// TODO: Show error notification
+		showError(`Failed to add "${track.title}" to playlist`);
 	}
 };
+
+const confirmDuplicateAdd = async () => {
+	const { showSuccess, showError } = useToast();
+
+	if (!pendingTrackAdd.value) {
+		return;
+	}
+
+	const { track, playlistName } = pendingTrackAdd.value;
+
+	try {
+		const targetPlaylist = appState.Playlists.find((p: Playlist) => p.name === playlistName);
+		if (!targetPlaylist) {
+			showError(`Playlist "${playlistName}" not found`);
+			return;
+		}
+
+		await backendService.AddTrackToPlaylistById(track.id, targetPlaylist.id);
+		showSuccess(`Added "${track.title}" to playlist "${playlistName}"`);
+		console.log(`Added "${track.title}" to playlist "${playlistName}"`);
+	} catch (error) {
+		console.error("Error adding track to playlist:", error);
+		showError(`Failed to add "${track.title}" to playlist`);
+	} finally {
+		showDuplicateConfirm.value = false;
+		pendingTrackAdd.value = null;
+	}
+};
+
+const cancelDuplicateAdd = () => {
+	showDuplicateConfirm.value = false;
+	pendingTrackAdd.value = null;
+};
+
+const duplicateConfirmMessage = computed(() => {
+	if (!pendingTrackAdd.value) {
+		return "";
+	}
+	const { track, playlistName } = pendingTrackAdd.value;
+	return `"${track.title}" by ${track.artist} is already in "${playlistName}". Add it again?`;
+});
 
 // Lifecycle
 onMounted(async () => {
@@ -199,5 +262,17 @@ watch(
 				@search-blur="searchBlur"
 			/>
 		</div>
+
+		<!-- Duplicate Track Confirmation Modal -->
+		<ConfirmationModal
+			:is-open="showDuplicateConfirm"
+			title="Duplicate Track"
+			:message="duplicateConfirmMessage"
+			confirm-text="Add Again"
+			cancel-text="Cancel"
+			:is-danger="false"
+			@confirm="confirmDuplicateAdd"
+			@cancel="cancelDuplicateAdd"
+		/>
 	</div>
 </template>

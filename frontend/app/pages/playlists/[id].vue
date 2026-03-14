@@ -9,6 +9,7 @@ import PlayerService from "~/services/player.service";
 import type { IColorPalette } from "~/components/ColorizedHero.vue";
 import ColorizedHero from "~/components/ColorizedHero.vue";
 import { useImageUrl } from "~/composables/useImageUrl";
+import { useToast } from "~/composables/useToast";
 
 // Inject search handlers from layout
 const searchFocus = inject("searchFocus") as () => void;
@@ -34,6 +35,8 @@ const searchQuery = ref("");
 const totalTracks = ref(0);
 const showRemoveConfirm = ref(false);
 const trackToRemove = ref<Track | null>(null);
+const showDuplicateConfirm = ref(false);
+const pendingTrackAdd = ref<{ track: Track; playlistName: string } | null>(null);
 
 // Color analysis variables
 const palette = ref<IColorPalette>({
@@ -162,20 +165,78 @@ const handleAddToQueue = (track: Track) => {
 };
 
 const handleAddToPlaylist = async (track: Track, targetPlaylistName: string) => {
+	const { showSuccess, showError } = useToast();
+
 	try {
 		// Find the playlist ID from the name
 		const targetPlaylist = appState.Playlists.find((p: Playlist) => p.name === targetPlaylistName);
 		if (!targetPlaylist) {
 			console.error(`Playlist "${targetPlaylistName}" not found`);
+			showError(`Playlist "${targetPlaylistName}" not found`);
+			return;
+		}
+
+		// Check for duplicates in the playlist
+		const isDuplicate = tracks.value.some(
+			(t) => t.id === track.id || (t.title === track.title && t.artist === track.artist)
+		);
+
+		if (isDuplicate) {
+			// Show confirmation modal for duplicate
+			pendingTrackAdd.value = { track, playlistName: targetPlaylistName };
+			showDuplicateConfirm.value = true;
 			return;
 		}
 
 		await backendService.AddTrackToPlaylistById(track.id, targetPlaylist.id);
+		showSuccess(`Added "${track.title}" to playlist "${targetPlaylistName}"`);
 		console.log(`Added "${track.title}" to playlist "${targetPlaylistName}"`);
 	} catch (error) {
 		console.error("Error adding track to playlist:", error);
+		showError(`Failed to add "${track.title}" to playlist`);
 	}
 };
+
+const confirmDuplicateAdd = async () => {
+	const { showSuccess, showError } = useToast();
+
+	if (!pendingTrackAdd.value) {
+		return;
+	}
+
+	const { track, playlistName } = pendingTrackAdd.value;
+
+	try {
+		const targetPlaylist = appState.Playlists.find((p: Playlist) => p.name === playlistName);
+		if (!targetPlaylist) {
+			showError(`Playlist "${playlistName}" not found`);
+			return;
+		}
+
+		await backendService.AddTrackToPlaylistById(track.id, targetPlaylist.id);
+		showSuccess(`Added "${track.title}" to playlist "${playlistName}"`);
+		console.log(`Added "${track.title}" to playlist "${playlistName}"`);
+	} catch (error) {
+		console.error("Error adding track to playlist:", error);
+		showError(`Failed to add "${track.title}" to playlist`);
+	} finally {
+		showDuplicateConfirm.value = false;
+		pendingTrackAdd.value = null;
+	}
+};
+
+const cancelDuplicateAdd = () => {
+	showDuplicateConfirm.value = false;
+	pendingTrackAdd.value = null;
+};
+
+const duplicateConfirmMessage = computed(() => {
+	if (!pendingTrackAdd.value) {
+		return "";
+	}
+	const { track } = pendingTrackAdd.value;
+	return `"${track.title}" by ${track.artist} is already in this playlist. Add it again?`;
+});
 
 const handleRemoveTrackClick = (track: Track) => {
 	trackToRemove.value = track;
@@ -384,6 +445,18 @@ watch(
 				Back to Playlists
 			</NuxtLink>
 		</div>
+
+		<!-- Duplicate Track Confirmation Modal -->
+		<ConfirmationModal
+			:is-open="showDuplicateConfirm"
+			title="Duplicate Track"
+			:message="duplicateConfirmMessage"
+			confirm-text="Add Again"
+			cancel-text="Cancel"
+			:is-danger="false"
+			@confirm="confirmDuplicateAdd"
+			@cancel="cancelDuplicateAdd"
+		/>
 
 		<!-- Remove Track Confirmation Dialog -->
 		<div v-if="showRemoveConfirm && trackToRemove" class="modal is-active">
