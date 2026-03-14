@@ -100,25 +100,25 @@ defineExpose({
 }
 
 .toast-success {
-	background: rgba(76, 175, 80, 0.8);
+	background: rgba(76, 175, 80, 1);
 	border-left: 4px solid #4caf50;
 	color: #4caf50;
 }
 
 .toast-error {
-	background: rgba(244, 67, 54, 0.8);
+	background: rgba(244, 67, 54, 1);
 	border-left: 4px solid #f44336;
 	color: #f44336;
 }
 
 .toast-warning {
-	background: rgba(255, 193, 7, 0.8);
+	background: rgba(255, 193, 7, 1);
 	border-left: 4px solid #ffc107;
 	color: #ffc107;
 }
 
 .toast-info {
-	background: rgba(33, 150, 243, 0.8);
+	background: rgba(33, 150, 243, 1);
 	border-left: 4px solid #2196f3;
 	color: #2196f3;
 }

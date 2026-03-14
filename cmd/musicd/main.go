@@ -558,6 +558,69 @@ func deleteRemovedSongs(existingPaths []string) error {
 	return err
 }
 
+// deleteOrphanedPlaylists removes playlists from the database if their m3u files no longer exist on disk
+// M3U files are the source of truth for playlists
+func deleteOrphanedPlaylists(existingM3uFiles []string) error {
+	// Build a map of existing m3u file paths for quick lookup
+	existingFiles := make(map[string]bool)
+	for _, filePath := range existingM3uFiles {
+		existingFiles[filePath] = true
+	}
+
+	// Get all playlists that have file_path set
+	rows, err := db.Query("SELECT id, name, file_path FROM playlists WHERE file_path IS NOT NULL AND file_path != ''")
+	if err != nil {
+		return fmt.Errorf("failed to query playlists: %v", err)
+	}
+	defer rows.Close()
+
+	var orphanedPlaylistIDs []string
+	var deletedCount int
+
+	for rows.Next() {
+		var playlistID, playlistName, filePath string
+		if err := rows.Scan(&playlistID, &playlistName, &filePath); err != nil {
+			log.Printf("Warning: Failed to scan playlist: %v", err)
+			continue
+		}
+
+		// Check if the m3u file still exists
+		if !existingFiles[filePath] {
+			// Check if file exists on disk
+			if _, err := os.Stat(filePath); os.IsNotExist(err) {
+				orphanedPlaylistIDs = append(orphanedPlaylistIDs, playlistID)
+				deletedCount++
+				log.Printf("Playlist %s (id: %s) m3u file not found at %s - marking for deletion", playlistName, playlistID, filePath)
+			}
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error iterating playlists: %v", err)
+	}
+
+	// Delete orphaned playlists and their tracks
+	for _, playlistID := range orphanedPlaylistIDs {
+		// Delete playlist tracks first (they should cascade, but let's be explicit)
+		if _, err := db.Exec("DELETE FROM playlist_songs WHERE playlist_id = $1", playlistID); err != nil {
+			log.Printf("Warning: Failed to delete tracks for orphaned playlist %s: %v", playlistID, err)
+		}
+
+		// Delete the playlist itself
+		if _, err := db.Exec("DELETE FROM playlists WHERE id = $1", playlistID); err != nil {
+			log.Printf("Warning: Failed to delete orphaned playlist %s: %v", playlistID, err)
+		} else {
+			log.Printf("Deleted orphaned playlist %s", playlistID)
+		}
+	}
+
+	if deletedCount > 0 {
+		log.Printf("Removed %d orphaned playlists whose m3u files no longer exist", deletedCount)
+	}
+
+	return nil
+}
+
 func getCoverArt(coverArtID string) ([]byte, string, error) {
 	query := `SELECT content, mime_type FROM images WHERE id = $1`
 
@@ -1038,6 +1101,11 @@ func scanMusicLibrary() error {
 		}
 	}
 
+	// Remove playlists from database if their m3u files no longer exist
+	if err := deleteOrphanedPlaylists(m3uFiles); err != nil {
+		log.Printf("Error removing orphaned playlists: %v", err)
+	}
+
 	// Database-only approach - removed in-memory library operations
 	elapsed := time.Since(startTime)
 	log.Printf("Music library scan completed - using database-only approach in %s", elapsed)
@@ -1415,6 +1483,7 @@ func writePlaylistToFile(playlistID, filePath string) error {
 	// Get the directory of the m3u file for relative path calculation
 	playlistDir := filepath.Dir(filePath)
 
+	trackCount := 0
 	for rows.Next() {
 		var trackPath, title, artist string
 		var duration int
@@ -1424,17 +1493,35 @@ func writePlaylistToFile(playlistID, filePath string) error {
 		}
 		content.WriteString(fmt.Sprintf("#EXTINF:%d,%s - %s\n", duration, artist, title))
 
+		// Track paths are stored as relative to musicDir, so convert to absolute first
+		absoluteTrackPath := trackPath
+		if !filepath.IsAbs(trackPath) {
+			absoluteTrackPath = filepath.Join(musicDir, trackPath)
+		}
+
 		// Convert absolute track path to relative path from the playlist directory
-		relativePath, err := filepath.Rel(playlistDir, trackPath)
+		relativePath, err := filepath.Rel(playlistDir, absoluteTrackPath)
 		if err != nil {
-			log.Printf("Warning: Failed to compute relative path for %s: %v, using absolute path", trackPath, err)
-			relativePath = trackPath
+			log.Printf("Warning: Failed to compute relative path for %s: %v, using absolute path", absoluteTrackPath, err)
+			relativePath = absoluteTrackPath
 		}
 		content.WriteString(relativePath + "\n")
+		trackCount++
 	}
 
+	// Check for errors from iteration
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error iterating playlist tracks: %v", err)
+	}
+
+	log.Printf("Writing playlist %s with %d tracks to %s", playlistID, trackCount, filePath)
+
 	// Write to file
-	return os.WriteFile(filePath, []byte(content.String()), 0644)
+	if err := os.WriteFile(filePath, []byte(content.String()), 0644); err != nil {
+		return fmt.Errorf("failed to write playlist file: %v", err)
+	}
+
+	return nil
 }
 
 // Legacy loadPlaylist function removed - incompatible with database-only approach
@@ -2243,19 +2330,6 @@ func apiAddToPlaylistByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !exists {
 		http.Error(w, "Track not found", http.StatusNotFound)
-		return
-	}
-
-	// Check if track is already in playlist
-	var alreadyExists bool
-	err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM playlist_songs WHERE playlist_id = $1 AND song_id = $2)", playlistID, trackID).Scan(&alreadyExists)
-	if err != nil {
-		http.Error(w, "Error checking playlist", http.StatusInternalServerError)
-		return
-	}
-
-	if alreadyExists {
-		http.Error(w, "Track already in playlist", http.StatusConflict)
 		return
 	}
 
