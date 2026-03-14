@@ -4,6 +4,7 @@ import { throttle } from "lodash";
 import useAppState, { RepeatMode } from "~/stores/appState";
 import awaitAppState from "@/composables/awaitAppState";
 import backendService from "~/services/backend.service";
+import httpService from "~/services/http.service";
 import PlayerService from "~/services/player.service";
 import useKeyboardShortcuts from "~/composables/useKeyboardShortcuts";
 import { useRemoteSync } from "../composables/useRemoteSync";
@@ -40,7 +41,6 @@ let appInitCleanup: (() => void) | null = null;
 // Reactive data
 const showNavbarMenu = ref(false);
 const showCreatePlaylistModal = ref(false);
-const newPlaylistName = ref("");
 const searchQuery = ref("");
 const showVisualizerOverlay = ref(false);
 const showLyricsModal = ref(false);
@@ -136,22 +136,33 @@ const fetchPlaylists = async () => {
 		console.error("Error fetching playlists:", error);
 	}
 };
-const createPlaylist = async () => {
-	if (!newPlaylistName.value.trim()) {
-		return;
-	}
-
+const handleCreatePlaylist = async (name: string, location: string, customPath: string) => {
 	isLoading.value = true;
 	try {
-		await backendService.CreatePlaylist(newPlaylistName.value.trim());
-		newPlaylistName.value = "";
+		const payload = {
+			name: name,
+			location: location,
+			customPath: "custom" === location ? customPath : ""
+		};
+
+		await httpService.post("/api/playlist/create", payload);
+
+		// Close modal (component will reset form)
 		showCreatePlaylistModal.value = false;
+
+		// Refresh playlists
 		await fetchPlaylists();
+
+		console.log(`Created playlist "${payload.name}"`);
 	} catch (error) {
 		console.error("Error creating playlist:", error);
 	} finally {
 		isLoading.value = false;
 	}
+};
+
+const handleCloseCreateModal = () => {
+	showCreatePlaylistModal.value = false;
 };
 
 const performSearch = () => {
@@ -1594,33 +1605,12 @@ onBeforeUnmount(() => {
 		</transition>
 
 		<!-- Create Playlist Modal -->
-		<div v-if="showCreatePlaylistModal" class="playlist-modal">
-			<div class="playlist-modal-content">
-				<h3 class="title is-5 has-text-white">Create New Playlist</h3>
-				<div class="field">
-					<div class="control">
-						<input
-							v-model="newPlaylistName"
-							class="input"
-							type="text"
-							placeholder="Enter playlist name..."
-							@keyup.enter="createPlaylist()"
-						/>
-					</div>
-				</div>
-				<div class="playlist-modal-buttons">
-					<button class="button" @click="showCreatePlaylistModal = false">Cancel</button>
-					<button
-						class="button is-primary"
-						:class="{ 'is-loading': isLoading }"
-						:disabled="!newPlaylistName.trim()"
-						@click="createPlaylist()"
-					>
-						Create
-					</button>
-				</div>
-			</div>
-		</div>
+		<CreatePlaylistModal
+			:is-open="showCreatePlaylistModal"
+			:is-loading="isLoading"
+			@close="handleCloseCreateModal"
+			@create="handleCreatePlaylist"
+		/>
 
 		<!-- Rescan Confirmation Modal -->
 		<div :class="{ modal: true, 'is-active': showRescanConfirm }">

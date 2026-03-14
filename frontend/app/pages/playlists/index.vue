@@ -23,9 +23,6 @@ const playlists = ref<Playlist[]>([]);
 const loading = ref(false);
 const showCreateModal = ref(false);
 const creating = ref(false);
-const newPlaylistName = ref("");
-const newPlaylistLocation = ref("playlists");
-const newPlaylistCustomPath = ref("");
 
 // Methods
 const fetchPlaylists = async () => {
@@ -50,25 +47,18 @@ const goToPlaylist = (playlist: Playlist) => {
 	}
 };
 
-const createPlaylist = async () => {
-	if (!newPlaylistName.value.trim()) {
-		return;
-	}
-
+const handleCreatePlaylist = async (name: string, location: string, customPath: string) => {
 	creating.value = true;
 	try {
 		const payload = {
-			name: newPlaylistName.value.trim(),
-			location: newPlaylistLocation.value,
-			customPath: "custom" === newPlaylistLocation.value ? newPlaylistCustomPath.value : ""
+			name: name,
+			location: location,
+			customPath: "custom" === location ? customPath : ""
 		};
 
 		await httpService.post("/api/playlist/create", payload);
 
-		// Reset form
-		newPlaylistName.value = "";
-		newPlaylistLocation.value = "playlists";
-		newPlaylistCustomPath.value = "";
+		// Close modal (component will reset form)
 		showCreateModal.value = false;
 
 		// Refresh playlists
@@ -80,6 +70,10 @@ const createPlaylist = async () => {
 	} finally {
 		creating.value = false;
 	}
+};
+
+const handleCloseModal = () => {
+	showCreateModal.value = false;
 };
 
 // Lifecycle
@@ -198,62 +192,13 @@ onMounted(async () => {
 		</div>
 
 		<!-- Create Playlist Modal -->
-		<div data-testid="create-playlist-modal" class="modal" :class="{ 'is-active': showCreateModal }">
-			<div class="modal-background" @click="showCreateModal = false"></div>
-			<div class="modal-card">
-				<header class="modal-card-head">
-					<p class="modal-card-title">Create New Playlist</p>
-					<button class="delete" @click="showCreateModal = false"></button>
-				</header>
-				<section class="modal-card-body">
-					<div class="field">
-						<label class="label">Playlist Name</label>
-						<div class="control">
-							<input
-								v-model="newPlaylistName"
-								class="input"
-								type="text"
-								placeholder="Enter playlist name"
-								@keyup.enter="createPlaylist"
-							/>
-						</div>
-					</div>
-					<div class="field">
-						<label class="label">Location</label>
-						<div class="control">
-							<div class="select is-fullwidth">
-								<select v-model="newPlaylistLocation">
-									<option value="playlists">Playlists folder</option>
-									<option value="music">Music folder</option>
-									<option value="custom">Custom folder</option>
-								</select>
-							</div>
-						</div>
-					</div>
-					<div v-if="newPlaylistLocation === 'custom'" class="field">
-						<label class="label">Custom Path</label>
-						<div class="control">
-							<input
-								v-model="newPlaylistCustomPath"
-								class="input"
-								type="text"
-								placeholder="folder/subfolder"
-							/>
-						</div>
-					</div>
-				</section>
-				<footer class="modal-card-foot">
-					<button class="button" @click="showCreateModal = false">Cancel</button>
-					<button
-						class="button is-primary"
-						:disabled="!newPlaylistName.trim()"
-						:class="{ 'is-loading': creating }"
-						@click="createPlaylist"
-					>
-						Create
-					</button>
-				</footer>
-			</div>
-		</div>
+		<!-- Create Playlist Modal -->
+		<CreatePlaylistModal
+			data-testid="create-playlist-modal"
+			:is-open="showCreateModal"
+			:is-loading="creating"
+			@close="handleCloseModal"
+			@create="handleCreatePlaylist"
+		/>
 	</div>
 </template>
