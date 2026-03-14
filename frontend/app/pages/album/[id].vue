@@ -184,9 +184,10 @@ const handleAddToPlaylist = async (track: Track, playlistName: string) => {
 		await backendService.AddTrackToPlaylistById(track.id, targetPlaylist.id);
 		showSuccess(`Added "${track.title}" to playlist "${playlistName}"`);
 		console.log(`Added "${track.title}" to playlist "${playlistName}"`);
-	} catch (error) {
+	} catch (error: any) {
+		const errorMsg = error?.data?.message || error?.message || "Unknown error";
 		console.error("Error adding track to playlist:", error);
-		showError(`Failed to add "${track.title}" to playlist`);
+		showError(`Failed to add "${track.title}" to playlist: ${errorMsg}`);
 	}
 };
 
@@ -209,9 +210,10 @@ const confirmDuplicateAdd = async () => {
 		await backendService.AddTrackToPlaylistById(track.id, targetPlaylist.id);
 		showSuccess(`Added "${track.title}" to playlist "${playlistName}"`);
 		console.log(`Added "${track.title}" to playlist "${playlistName}"`);
-	} catch (error) {
+	} catch (error: any) {
+		const errorMsg = error?.data?.message || error?.message || "Unknown error";
 		console.error("Error adding track to playlist:", error);
-		showError(`Failed to add "${track.title}" to playlist`);
+		showError(`Failed to add "${track.title}" to playlist: ${errorMsg}`);
 	} finally {
 		showDuplicateConfirm.value = false;
 		pendingTrackAdd.value = null;
