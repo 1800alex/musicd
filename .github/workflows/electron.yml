@@ -40,8 +40,8 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
 
-      - name: Generate Nuxt static output
-        run: make frontend
+      - name: Install dependencies
+        run: cd frontend && corepack yarn install
 
       - name: Build Electron app
         run: make electron-build
