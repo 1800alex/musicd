@@ -497,6 +497,11 @@ const updateProgress = throttle(() => {
 	}
 }, 5000);
 
+// Throttle Media Session position updates (expensive API calls)
+const updateMediaSessionPosition = throttle(() => {
+	player.value?.UpdatePositionState();
+}, 1000); // Update position state at most once per second
+
 const startSmoothProgressAnimation = () => {
 	if (progressAnimationId) {
 		cancelAnimationFrame(progressAnimationId);
@@ -786,7 +791,7 @@ onMounted(async () => {
 		// Set up audio element event listeners for media session
 		if (audioPlayer.value && player.value) {
 			audioPlayer.value.addEventListener("timeupdate", () => {
-				player.value?.UpdatePositionState();
+				updateMediaSessionPosition();
 			});
 
 			audioPlayer.value.addEventListener("loadedmetadata", () => {
