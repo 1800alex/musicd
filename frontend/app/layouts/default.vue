@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, nextTick, provide } from "vue";
+import { throttle } from "lodash";
 import useAppState, { RepeatMode } from "~/stores/appState";
 import awaitAppState from "@/composables/awaitAppState";
 import backendService from "~/services/backend.service";
@@ -485,14 +486,16 @@ const toggleMute = () => {
 	player.value?.ToggleMute();
 };
 
-const updateProgress = () => {
+// This function is throttled to run at most once every 5 seconds during playback to reduce CPU usage,
+// If you don't do this, the timeupdate event can fire dozens of times per second and cause performance issues.
+const updateProgress = throttle(() => {
 	if (!seeking.value && audioPlayer.value) {
 		currentTime.value = audioPlayer.value.currentTime;
 		if (duration.value > 0) {
 			seekPosition.value = (currentTime.value / duration.value) * 100;
 		}
 	}
-};
+}, 5000);
 
 const startSmoothProgressAnimation = () => {
 	if (progressAnimationId) {
@@ -1550,6 +1553,7 @@ onBeforeUnmount(() => {
 			preload="metadata"
 			controls="false"
 			:playsinline="true"
+			style="display: none"
 			@ended="handleTrackEnd()"
 			@timeupdate="updateProgress()"
 			@loadedmetadata="updateDuration()"
@@ -1557,7 +1561,6 @@ onBeforeUnmount(() => {
 			@pause="stopSmoothProgressAnimation()"
 			@seeking="stopSmoothProgressAnimation()"
 			@seeked="() => appState.IsPlaying && startSmoothProgressAnimation()"
-			style="display: none"
 		></audio>
 
 		<!-- Fullscreen Visualizer Overlay -->
