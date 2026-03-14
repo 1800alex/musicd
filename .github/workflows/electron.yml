@@ -40,8 +40,8 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
 
-      - name: Install dependencies
-        run: cd frontend && corepack yarn install
+      - name: Build frontend assets
+        run: make frontend
 
       - name: Build Electron app
         run: make electron-build
