@@ -1,6 +1,6 @@
 # musicd - Multi-Platform Music Server & Player
 
-> **Disclaimer**: This project was built with AI assistance. The core backend (Go) and lower-level frontend services were mostly written manually, but AI was instrumental in building the UI/visual components and helping structure the overall architecture. The project grew larger than originally anticipated, and turned out to be a much bigger undertaking than expected. I am sharing it in its current state in case it can be useful to others, but please be aware that it is still a work in progress and may have bugs, incomplete features, and areas that need improvement. Contributions are welcome!
+> **Disclaimer**: This project was built with AI assistance. The core backend (Go) and lower-level frontend services were mostly written manually, but AI was instrumental in building the UI/visual components. The project grew larger than originally anticipated, and turned out to be a much bigger undertaking than expected. I am sharing it in its current state in case it can be useful to others, but please be aware that it is still a work in progress and may have bugs, incomplete features, and areas that need improvement. Contributions are welcome!
 
 A comprehensive music server and player system with multiple frontends (web, desktop, iOS, Android) and a standalone music player daemon. Built with Go backend, Nuxt frontend, PostgreSQL database, and support for streaming.
 
