@@ -43,23 +43,24 @@ A comprehensive music server and player system with multiple frontends (web, des
 
 ## Installation
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd musicd
-   ```
+1. **Clone the example docker-compose file**:
+
+Setup your docker-compose file by copying the example and configuring it:
+```bash
+wget https://raw.githubusercontent.com/1800alex/musicd/main/examples/prod/docker-compose.yml -O docker-compose.yml
+```
 
 2. **Configure environment** (optional):
-   ```bash
-   cp docker-compose.yml.example docker-compose.yml
-   # Edit docker-compose.yml to set your music directory
-   ```
+Edit `docker-compose.yml` to set:
+- Music library path
+- Database credentials
+- Service ports
 
 3. **Start the services**:
-   ```bash
-   make docker-build
-   make docker-up
-   ```
+```bash
+docker-compose pull
+docker-compose up -d
+```
 
 4. **Access the applications**:
    - Web UI: http://localhost:8080
@@ -67,9 +68,27 @@ A comprehensive music server and player system with multiple frontends (web, des
 
 The complete stack (musicd API server, musicplayerd daemon, and PostgreSQL database) will be running in Docker containers.
 
-## Running the Application
+## Running the AppImage
+
+Download the latest AppImage for your platform from the releases page:
+
+For Linux:
+```bash
+chmod a+x Music.Player-0.0.1.AppImage
+./Music.Player-0.0.1.AppImage
+
+# if you get an error about sandbox issues, try:
+./Music.Player-0.0.1.AppImage --no-sandbox
+```
+
+## Running the Application from source
 
 All services run in Docker containers orchestrated by `docker-compose.yml`. An example configuration is provided in `docker-compose.yml.example` with comments for customization.
+
+### Build Services
+```bash
+make docker-build
+```
 
 ### Start Services
 ```bash
