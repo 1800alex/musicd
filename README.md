@@ -34,6 +34,36 @@ Perfect for self-hosting your music library and streaming to any device.
 - 🎚️ **Queue Management**: Add tracks/albums/playlists to queue
 - 🌐 **Remote Session Control**: Control playback from any device with API access
 
+## Why I Built This
+
+I created musicd to solve specific needs that existing music servers didn't address:
+
+1. **Complete Offline Support**: I wanted a music server that works completely offline on my local network. No cloud dependency, no account required. Your music library stays with you.
+
+2. **Cross-Device Queue Control**: I wanted to control the currently playing track and queue from any device—phone, laptop, or desktop. Start playing on one device, switch to another, and control playback of the original session seamlessly. (I use this out in my garage with my phone while the music is actually playing through my garage PC connected to my sound system.)
+
+3. **Support for Existing M3U Playlists**: I've manually curated M3U playlists over the years, and they're precious to me. I needed a solution that respects and works with these existing playlist files instead of forcing me to recreate them.
+
+4. **Playlist Synchronization**: I sync my M3U files across multiple devices already. I wanted musicd to integrate with this workflow, allowing me to edit playlists in one place and have them automatically available everywhere.
+
+The result is a self-hosted music system that puts you in control, respects your existing music organization, and works seamlessly across all your devices.
+
+## What This Project Doesn't Do
+
+It's important to understand what musicd is *not* designed for:
+
+- **Music Streaming Service**: This is not a Spotify/Apple Music replacement. It plays music from *your local files*, not streaming services.
+
+- **User Authentication & Multi-User Support**: musicd doesn't have built-in user accounts or permission management. It's designed for personal or small household use on a trusted local network. I'm open to suggestions for how to implement basic authentication without overcomplicating the setup, but for now it's a single-user system.
+
+- **Automatic Metadata Fetching**: musicd relies on ID3 tags in your music files. It doesn't automatically fetch metadata from MusicBrainz, Spotify, or other online services. Your metadata is only as good as your tags. This is a future enhancement I may add, but for now it's a local library manager that expects you to have properly tagged files.
+
+- **Audio Transcoding**: All audio is streamed in its original format. There's no on-the-fly transcoding to reduce bandwidth or storage usage.
+
+- **Music Discovery**: This isn't a recommendation engine. It's a library manager and player for music you already have. If you want features like music discovery, personalized recommendations, or integration with streaming services, I'm open to ideas on how we could add this via another container or plugin system, but it's not in the core scope of musicd currently.
+
+If you need any of these features, musicd may not be the right fit. However, if you have a personal music library and want complete control over how you organize and play it, musicd is a great option.
+
 ## Quick Start with Docker
 
 ### Prerequisites
