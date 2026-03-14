@@ -1412,6 +1412,9 @@ func writePlaylistToFile(playlistID, filePath string) error {
 	var content strings.Builder
 	content.WriteString("#EXTM3U\n")
 
+	// Get the directory of the m3u file for relative path calculation
+	playlistDir := filepath.Dir(filePath)
+
 	for rows.Next() {
 		var trackPath, title, artist string
 		var duration int
@@ -1420,7 +1423,14 @@ func writePlaylistToFile(playlistID, filePath string) error {
 			continue
 		}
 		content.WriteString(fmt.Sprintf("#EXTINF:%d,%s - %s\n", duration, artist, title))
-		content.WriteString(trackPath + "\n")
+
+		// Convert absolute track path to relative path from the playlist directory
+		relativePath, err := filepath.Rel(playlistDir, trackPath)
+		if err != nil {
+			log.Printf("Warning: Failed to compute relative path for %s: %v, using absolute path", trackPath, err)
+			relativePath = trackPath
+		}
+		content.WriteString(relativePath + "\n")
 	}
 
 	// Write to file
