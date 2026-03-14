@@ -23,6 +23,9 @@ const playlists = ref<Playlist[]>([]);
 const loading = ref(false);
 const showCreateModal = ref(false);
 const creating = ref(false);
+const showDeleteConfirm = ref(false);
+const playlistToDelete = ref<Playlist | null>(null);
+const deleting = ref(false);
 
 // Methods
 const fetchPlaylists = async () => {
@@ -34,6 +37,8 @@ const fetchPlaylists = async () => {
 			// search: searchQuery.value
 		});
 		playlists.value = response;
+		// Also update the global app state so playlist pickers and other components see the updated list
+		appState.SetPlaylists(response);
 	} catch (error) {
 		console.error("Error fetching playlists:", error);
 	} finally {
@@ -74,6 +79,36 @@ const handleCreatePlaylist = async (name: string, location: string, customPath: 
 
 const handleCloseModal = () => {
 	showCreateModal.value = false;
+};
+
+const handleDeletePlaylist = (playlist: Playlist) => {
+	playlistToDelete.value = playlist;
+	showDeleteConfirm.value = true;
+};
+
+const cancelDeletePlaylist = () => {
+	showDeleteConfirm.value = false;
+	playlistToDelete.value = null;
+};
+
+const confirmDeletePlaylist = async () => {
+	if (!playlistToDelete.value) {
+		return;
+	}
+
+	deleting.value = true;
+	try {
+		await backendService.DeletePlaylistById(playlistToDelete.value.id);
+		console.log(`Deleted playlist "${playlistToDelete.value.name}"`);
+		showDeleteConfirm.value = false;
+		playlistToDelete.value = null;
+		// Refresh playlists
+		await fetchPlaylists();
+	} catch (error) {
+		console.error("Error deleting playlist:", error);
+	} finally {
+		deleting.value = false;
+	}
 };
 
 // Lifecycle
@@ -176,6 +211,14 @@ onMounted(async () => {
 								<font-awesome-icon icon="fa-plus" />
 								Queue
 							</button>
+							<button
+								data-testid="playlist-delete-btn"
+								class="card-action-btn card-action-btn-danger"
+								@click.stop="handleDeletePlaylist(playlist)"
+							>
+								<font-awesome-icon icon="fa-trash" />
+								Delete
+							</button>
 						</div>
 					</div>
 				</div>
@@ -200,5 +243,36 @@ onMounted(async () => {
 			@close="handleCloseModal"
 			@create="handleCreatePlaylist"
 		/>
+
+		<!-- Delete Playlist Confirmation Modal -->
+		<div v-if="showDeleteConfirm && playlistToDelete" class="modal is-active">
+			<div class="modal-background" @click="cancelDeletePlaylist"></div>
+			<div class="modal-card">
+				<header class="modal-card-head">
+					<p class="modal-card-title">Delete Playlist</p>
+					<button class="delete" @click="cancelDeletePlaylist"></button>
+				</header>
+				<section class="modal-card-body">
+					<p>Are you sure you want to delete <strong>{{ playlistToDelete.name }}</strong>?</p>
+					<p class="has-text-grey mt-2"><small>This action cannot be undone.</small></p>
+				</section>
+				<footer class="modal-card-foot">
+					<button class="button" @click="cancelDeletePlaylist">Cancel</button>
+					<button class="button is-danger" :class="{ 'is-loading': deleting }" @click="confirmDeletePlaylist">
+						Delete
+					</button>
+				</footer>
+			</div>
+		</div>
 	</div>
 </template>
+
+<style scoped>
+.card-action-btn-danger {
+	color: var(--clr-error, #ff6b6b);
+}
+
+.card-action-btn-danger:hover {
+	background: rgba(255, 107, 107, 0.1);
+}
+</style>
