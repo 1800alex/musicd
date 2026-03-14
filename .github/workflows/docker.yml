@@ -36,6 +36,17 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (musicd)
+        id: meta-musicd-db
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=tag
+            type=sha
+
+      - name: Extract metadata (musicd)
         id: meta-musicd
         uses: docker/metadata-action@v5
         with:
@@ -56,6 +67,15 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=ref,event=tag
             type=sha
+
+      - name: Build and push musicd-db image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta-musicd-db.outputs.tags }}
+          labels: ${{ steps.meta-musicd-db.outputs.labels }}
 
       - name: Build and push musicd image
         uses: docker/build-push-action@v5
