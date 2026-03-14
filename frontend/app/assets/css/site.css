@@ -101,6 +101,36 @@
 }
 .slider {
 	width: 100px;
+	height: 4px;
+	outline: none;
+	border-radius: 2px;
+	appearance: none;
+	cursor: pointer;
+	background: linear-gradient(
+		to right,
+		var(--clr-primary) 0%,
+		var(--clr-primary) var(--volume-percent, 50%),
+		var(--clr-surface-higher) var(--volume-percent, 50%),
+		var(--clr-surface-higher) 100%
+	);
+}
+
+.slider::-webkit-slider-thumb {
+	appearance: none;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: var(--clr-primary);
+	cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: var(--clr-primary);
+	cursor: pointer;
+	border: none;
 }
 .audio-player-controls {
 	display: flex;
