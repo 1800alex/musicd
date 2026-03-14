@@ -176,9 +176,13 @@ const handleAddToPlaylist = async (track: Track, targetPlaylistName: string) => 
 			return;
 		}
 
-		// Check for duplicates in the playlist
-		const isDuplicate = tracks.value.some(
-			(t) => t.id === track.id || (t.title === track.title && t.artist === track.artist)
+		// Fetch ALL tracks from the playlist to check for duplicates (not just current page)
+		const playlistTracks = await backendService.FetchPlaylistTracks(targetPlaylist.id, {
+			pageSize: 10000
+		});
+
+		const isDuplicate = playlistTracks.data.some(
+			(t) => t.id === track.id
 		);
 
 		if (isDuplicate) {
