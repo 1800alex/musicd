@@ -1,0 +1,30 @@
+# Docker Compose configuration for musicplayerd only
+#
+# This setup runs just the music player daemon connected to an external musicd instance.
+version: '3.8'
+
+services:
+  musicplayerd:
+    image: ghcr.io/1800alex/musicd-musicplayerd:latest
+    restart: unless-stopped
+    environment:
+      - MUSICD_URL=http://your-server-ip:8080
+      - SESSION_NAME=docker-player
+      - AUDIO_DEVICE=auto
+      - AUDIO_VOLUME=80
+      - PULSE_SERVER=unix:/run/user/1000/pulse/native
+      # Streaming (uncomment to enable)
+      # - STREAM_ENABLED=true
+      # - STREAM_HTTP_PORT=8090
+      # - STREAM_RTP_DEST=rtp://239.0.0.1:5004
+    volumes:
+      # Mount host PulseAudio/PipeWire socket for local audio output
+      - /run/user/1000/pulse/native:/run/user/1000/pulse/native
+      # Persist session ID across container restarts
+      - musicplayerd:/var/lib/musicplayerd
+    # ports:
+    #   - "8090:8090"
+    #   - "5004:5004/udp"
+
+volumes:
+  musicplayerd:

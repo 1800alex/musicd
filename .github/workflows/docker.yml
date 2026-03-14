@@ -73,6 +73,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile.db
+          platforms: linux/amd64,linux/aarch64
           push: true
           tags: ${{ steps.meta-musicd-db.outputs.tags }}
           labels: ${{ steps.meta-musicd-db.outputs.labels }}
@@ -82,6 +83,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          platforms: linux/amd64,linux/aarch64
           push: true
           tags: ${{ steps.meta-musicd.outputs.tags }}
           labels: ${{ steps.meta-musicd.outputs.labels }}
@@ -91,6 +93,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile.musicplayerd
+          platforms: linux/amd64,linux/aarch64
           push: true
           tags: ${{ steps.meta-musicplayerd.outputs.tags }}
           labels: ${{ steps.meta-musicplayerd.outputs.labels }}
