@@ -1,0 +1,48 @@
+# Multi-stage Dockerfile for musicplayerd
+# Stage 1: Build the Go binary
+FROM golang:1.24-alpine AS builder
+
+RUN apk add --no-cache git ca-certificates tzdata
+
+WORKDIR /app
+
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source
+COPY . .
+
+# Build statically-linked binary
+RUN mkdir -p ./bin && \
+    CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -ldflags="-w -s" -o ./bin/musicplayerd ./cmd/musicplayerd
+
+# Stage 2: Runtime image with mpv and ffmpeg
+FROM alpine:latest
+
+# mpv for audio playback, ffmpeg for streaming, pulseaudio-utils for pactl
+RUN apk --no-cache add ca-certificates tzdata mpv ffmpeg pulseaudio-utils
+
+WORKDIR /root/
+
+# Copy the binary from builder stage
+COPY --from=builder /app/bin/musicplayerd .
+
+# Create state directory for session persistence
+RUN mkdir -p /var/lib/musicplayerd
+
+# Default environment
+ENV MUSICD_URL=""
+ENV SESSION_NAME=""
+ENV STATE_DIR=/var/lib/musicplayerd
+ENV AUDIO_DEVICE=auto
+ENV AUDIO_VOLUME=80
+ENV MPV_SOCKET=/tmp/musicplayerd-mpv.sock
+ENV STREAM_ENABLED=false
+ENV STREAM_FORMAT=mp3
+ENV STREAM_BITRATE=320k
+
+# HTTP stream port (only used if STREAM_HTTP_PORT is set)
+# EXPOSE 8090
+
+CMD ["/root/musicplayerd"]

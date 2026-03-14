@@ -1,0 +1,9 @@
+.git/
+.nuxt/
+.output/
+.yarn/
+dist/
+dist
+node_modules/
+.*
+Dockerfile

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Bundle Configuration -->
+	<key>CFBundleDisplayName</key>
+	<string>Music Player</string>
+
+	<key>CFBundleName</key>
+	<string>Music</string>
+
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+
+	<key>CFBundleVersion</key>
+	<string>1</string>
+
+	<key>CFBundleIdentifier</key>
+	<string>com.yourname.musicplayer</string>
+
+	<!-- ⭐ CRITICAL: Background Audio Configuration ⭐ -->
+	<!-- This allows music to keep playing when app is backgrounded -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+
+	<!-- Remote Control Support (for lock screen controls) -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Music Player needs local network access to control remote devices</string>
+
+	<key>NSBonjourServiceTypes</key>
+	<array>
+		<string>_musicplayer._tcp</string>
+	</array>
+
+	<!-- Microphone (optional, for voice commands) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Music Player uses microphone for voice commands with Siri</string>
+
+	<!-- Audio Settings -->
+	<key>AVAudioDefaultToSpeaker</key>
+	<true/>
+
+	<!-- Prevent sleeping while playing -->
+	<key>UIIdleTimerDisabled</key>
+	<false/>
+
+	<!-- Lock Screen Controls Support -->
+	<key>NSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+
+	<!-- Status Bar Configuration -->
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
+
+	<key>UIStatusBarHidden</key>
+	<false/>
+
+	<!-- App Display Mode -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<!-- iPad Support -->
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<!-- Minimum iOS Version -->
+	<key>MinimumOSVersion</key>
+	<string>13.0</string>
+
+	<!-- App Transport Security (localhost for development) -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+
+	<!-- Privacy Settings (customize as needed) -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+</dict>
+</plist>

@@ -1,0 +1,14 @@
+node_modules/
+bin/
+cmd/musicd/ui/
+frontend/node_modules/
+frontend/.output/
+frontend/.nuxt/
+frontend/dist-electron/
+frontend/dist/
+frontend/test-results/
+frontend/.vscode/
+frontend/playwright-report/
+frontend/ios/
+frontend/android/
+wipdocs/

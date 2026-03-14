@@ -6,3 +6,4 @@
 
 # Docker volumes
 postgres_data/
+/docker-compose.yml
