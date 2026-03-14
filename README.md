@@ -62,7 +62,14 @@ It's important to understand what musicd is *not* designed for:
 
 - **Music Discovery**: This isn't a recommendation engine. It's a library manager and player for music you already have. If you want features like music discovery, personalized recommendations, or integration with streaming services, I'm open to ideas on how we could add this via another container or plugin system, but it's not in the core scope of musicd currently.
 
-If you need any of these features, musicd may not be the right fit. However, if you have a personal music library and want complete control over how you organize and play it, musicd is a great option.
+## Current Limitations & Missing Features
+
+Here's what's **not yet implemented**:
+
+- **Tag Editing**: You cannot edit ID3 tags through musicd. All metadata comes from your files. Make sure your music is properly tagged before importing.
+- **Cover Art Upload**: You can view cover art extracted from ID3 tags, but cannot upload or change cover art through the UI.
+- **Playlist Metadata Editing**: You can add/remove tracks from playlists (and changes sync to M3U files), but cannot rename playlists or edit playlist descriptions through the UI.
+- **Remote Playlist Editing**: While cross-device queue control works perfectly, playlist editing must be done on the device running the player daemon.
 
 ## Quick Start with Docker
 
