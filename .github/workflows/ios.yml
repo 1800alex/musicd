@@ -1,9 +1,14 @@
 name: Build iOS App
 
+# Note: This workflow is currently configured to run on a placeholder tag pattern "NO_TEAMID_YET" because we don't have a team ID for code signing yet. Once we have the team ID and can set up code signing, we should update the tag pattern to "v*" to trigger on actual version tags.
 on:
   push:
     tags:
-      - "v*"
+      - "NO_TEAMID_YET"
+# on:
+#   push:
+#     tags:
+#       - "v*"
 
 jobs:
   build:
