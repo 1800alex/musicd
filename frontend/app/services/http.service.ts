@@ -38,19 +38,25 @@ export interface IResponse<T> {
  * against the current origin.
  */
 export function resolveBaseURL(override?: string): string {
-	if (override) return override;
+	if (override) {
+		return override;
+	}
 
 	if (Capacitor.isNativePlatform() || isElectron()) {
 		// In native/electron builds, read the backend URL from localStorage (set by
 		// a settings page) or fall back to the compile-time env variable.
 		const stored = localStorage.getItem("backendURL");
-		if (stored) return stored;
+		if (stored) {
+			return stored;
+		}
 
 		// Fall back to the Nuxt runtime config value injected at build time.
 		// __NUXT_PUBLIC_BACKEND_URL__ is replaced by Vite's define plugin.
 		try {
 			const rc = useRuntimeConfig();
-			if (rc?.public?.backendURL) return rc.public.backendURL as string;
+			if (rc?.public?.backendURL) {
+				return rc.public.backendURL as string;
+			}
 		} catch {
 			// useRuntimeConfig may not be available outside setup context
 		}

@@ -22,7 +22,7 @@ export const useBackendURL = () => {
 	const getHTTPURL = (path: string = ""): string => {
 		const baseURL = resolveBaseURL().replace(/\/$/, "");
 		// On web, baseURL is "/" so we just return the path
-		if (baseURL === "") {
+		if ("" === baseURL) {
 			return path;
 		}
 		return `${baseURL}${path}`;
@@ -56,7 +56,7 @@ export const useBackendURL = () => {
 		}
 
 		// Fall back to window protocol
-		return window.location.protocol === "https:" ? "wss" : "ws";
+		return "https:" === window.location.protocol ? "wss" : "ws";
 	};
 
 	/**

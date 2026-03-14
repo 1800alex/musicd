@@ -14,7 +14,7 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 	const sessionName = ref<string>("");
 	const sessionId = ref<string>("");
 	const controllerCount = ref<number>(0);
-	const enabled = ref<boolean>(localStorage.getItem("remoteSyncEnabled") === "true");
+	const enabled = ref<boolean>("true" === localStorage.getItem("remoteSyncEnabled"));
 
 	let ws: WebSocket | null = null;
 	let reconnectTimeout: NodeJS.Timeout | null = null;
@@ -27,7 +27,9 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 	let lastSentState: any = null;
 
 	const connectWebSocket = () => {
-		if (!enabled.value) return;
+		if (!enabled.value) {
+			return;
+		}
 		intentionalClose = false;
 
 		try {
@@ -81,7 +83,9 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 			};
 
 			ws.onclose = () => {
-				if (intentionalClose) return;
+				if (intentionalClose) {
+					return;
+				}
 				console.log("WebSocket disconnected, will reconnect...");
 				scheduleReconnect();
 			};
@@ -112,8 +116,12 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 	};
 
 	const scheduleReconnect = () => {
-		if (!enabled.value) return;
-		if (reconnectTimeout) clearTimeout(reconnectTimeout);
+		if (!enabled.value) {
+			return;
+		}
+		if (reconnectTimeout) {
+			clearTimeout(reconnectTimeout);
+		}
 		reconnectTimeout = setTimeout(() => {
 			console.log(`Reconnecting WebSocket (${reconnectDelay}ms delay)...`);
 			connectWebSocket();
@@ -122,7 +130,9 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 	};
 
 	const sendStateUpdate = (force = false) => {
-		if (!ws || ws.readyState !== WebSocket.OPEN) return;
+		if (!ws || ws.readyState !== WebSocket.OPEN) {
+			return;
+		}
 
 		const currentState = {
 			is_playing: appState.IsPlaying,
@@ -303,7 +313,9 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 			() => appState.CurrentPlaylist
 		],
 		() => {
-			if (stateDebounceTimer) clearTimeout(stateDebounceTimer);
+			if (stateDebounceTimer) {
+				clearTimeout(stateDebounceTimer);
+			}
 			// Increased debounce to 500ms to reduce update frequency during playback
 			stateDebounceTimer = setTimeout(() => {
 				sendStateUpdate();
@@ -315,7 +327,9 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 	let timeUpdateHandler: (() => void) | null = null;
 	let lastTimeSent = 0;
 	const setupAudioTimeTracking = () => {
-		if (!audioEl.value) return;
+		if (!audioEl.value) {
+			return;
+		}
 
 		// Remove old listener if it exists (prevent duplicate listeners)
 		if (timeUpdateHandler && audioEl.value) {

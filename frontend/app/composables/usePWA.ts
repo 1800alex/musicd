@@ -32,10 +32,12 @@ export const usePWA = () => {
 			// Listen for updates
 			registration.addEventListener("updatefound", () => {
 				const newWorker = registration.installing;
-				if (!newWorker) return;
+				if (!newWorker) {
+					return;
+				}
 
 				newWorker.addEventListener("statechange", () => {
-					if (newWorker.state === "activated") {
+					if ("activated" === newWorker.state) {
 						console.log("New Service Worker activated");
 						notifyUpdate();
 					}
@@ -63,7 +65,7 @@ export const usePWA = () => {
 		}
 
 		// Check if running in fullscreen mode (iOS)
-		if (navigator.standalone === true) {
+		if (true === navigator.standalone) {
 			isInstalled.value = true;
 			return;
 		}
@@ -94,7 +96,7 @@ export const usePWA = () => {
 		const { outcome } = await deferredPrompt.value.userChoice;
 		console.log(`User response to install prompt: ${outcome}`);
 
-		if (outcome === "accepted") {
+		if ("accepted" === outcome) {
 			isInstalled.value = true;
 		}
 
@@ -104,7 +106,7 @@ export const usePWA = () => {
 
 	// Initialize PWA features
 	const init = () => {
-		if (typeof window === "undefined") {
+		if ("undefined" === typeof window) {
 			return;
 		}
 

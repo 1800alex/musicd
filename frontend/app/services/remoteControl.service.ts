@@ -56,7 +56,7 @@ export default class RemoteControlService {
 				try {
 					const msg: WSMessage = JSON.parse(event.data);
 
-					if (msg.type === "state") {
+					if ("state" === msg.type) {
 						const state: PlayerState = {
 							is_playing: msg.is_playing,
 							current_track: msg.current_track,
@@ -95,7 +95,9 @@ export default class RemoteControlService {
 	}
 
 	private scheduleReconnect(serverUrl: string) {
-		if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
+		if (this.reconnectTimeout) {
+			clearTimeout(this.reconnectTimeout);
+		}
 		this.reconnectTimeout = setTimeout(() => {
 			console.log(`Reconnecting... (${this.reconnectDelay}ms)`);
 			this.connect(serverUrl);
@@ -235,8 +237,12 @@ export default class RemoteControlService {
 	}
 
 	public disconnect() {
-		if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
-		for (const timer of this.throttleTimers.values()) clearTimeout(timer);
+		if (this.reconnectTimeout) {
+			clearTimeout(this.reconnectTimeout);
+		}
+		for (const timer of this.throttleTimers.values()) {
+			clearTimeout(timer);
+		}
 		this.throttleTimers.clear();
 		this.throttlePending.clear();
 		if (this.ws) {

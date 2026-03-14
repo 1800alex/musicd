@@ -9,15 +9,15 @@ export const isNative = (): boolean => {
 };
 
 export const isIOS = (): boolean => {
-	return Capacitor.getPlatform() === "ios";
+	return "ios" === Capacitor.getPlatform();
 };
 
 export const isAndroid = (): boolean => {
-	return Capacitor.getPlatform() === "android";
+	return "android" === Capacitor.getPlatform();
 };
 
 export const isWeb = (): boolean => {
-	return Capacitor.getPlatform() === "web";
+	return "web" === Capacitor.getPlatform();
 };
 
 export const getPlatform = (): string => {
@@ -25,7 +25,7 @@ export const getPlatform = (): string => {
 };
 
 export const isElectron = (): boolean => {
-	return typeof window !== "undefined" && !!(window as any).__ELECTRON__;
+	return typeof window !== "undefined" && Boolean((window as any).__ELECTRON__);
 };
 
 export const isNativeOrElectron = (): boolean => isNative() || isElectron();

@@ -59,7 +59,9 @@ export const useNativeAudio = () => {
 		watch(
 			() => appState.AudioElement,
 			(el) => {
-				if (!el) return;
+				if (!el) {
+					return;
+				}
 
 				el.addEventListener("pause", () => {
 					// Only update state if the pause wasn't triggered by us

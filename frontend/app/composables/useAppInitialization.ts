@@ -80,13 +80,13 @@ export const useAppInitialization = (playerService: any) => {
 		// Request wake lock when playing, release when paused
 		if (typeof window !== "undefined") {
 			window.addEventListener("focus", () => {
-				if (document.hidden === false && wakeLockSentinel === null) {
+				if (false === document.hidden && null === wakeLockSentinel) {
 					acquireWakeLock();
 				}
 			});
 
 			document.addEventListener("visibilitychange", async () => {
-				if ((document as any).visible === false) {
+				if (false === (document as any).visible) {
 					releaseWakeLock();
 				} else {
 					acquireWakeLock();
