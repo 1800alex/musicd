@@ -1,15 +1,17 @@
-version: "3.8"
+version: '3.8'
 
 services:
   db:
-    image: postgres:15-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.db
     restart: unless-stopped
     environment:
       POSTGRES_DB: musicdb
       POSTGRES_USER: music_user
       POSTGRES_PASSWORD: music_pass
     volumes:
-      - /home/alex/data/music/postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
@@ -20,7 +22,7 @@ services:
       retries: 5
 
   musicd:
-    image: ghcr.io/1800alex/musicd:latest
+    build: .
     ports:
       - "8080:8080"
     depends_on:
@@ -32,16 +34,12 @@ services:
       - MUSIC_DIR=/music/
       - PLAYLISTS_DIR=/music/
     volumes:
-      - /home/alex/Music/Playlists:/music
-    networks:
-      - default
-      - caddy
-    labels:
-      caddy: "music.kneepull.duckdns.org:80"
-      caddy.reverse_proxy: "{{upstreams 8000}}"
+      - /path/to/your/music:/music
 
   musicplayerd:
-    image: ghcr.io/1800alex/musicd-musicplayerd:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.musicplayerd
     depends_on:
       - musicd
     restart: unless-stopped
@@ -59,7 +57,11 @@ services:
       # Mount host PulseAudio/PipeWire socket for local audio output
       - /run/user/1000/pulse/native:/run/user/1000/pulse/native
       # Persist session ID across container restarts
-      - /home/alex/data/music/musicplayerd:/var/lib/musicplayerd
+      - musicplayerd_data:/var/lib/musicplayerd
     # ports:
     #   - "8090:8090"
     #   - "5004:5004/udp"
+
+volumes:
+  postgres_data:
+  musicplayerd_data:
