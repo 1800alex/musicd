@@ -50,7 +50,7 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates tzdata
 
 # Create app directory
-WORKDIR /root/
+WORKDIR /app
 
 # Copy the binary from builder stage
 COPY --from=backend-builder /app/bin/musicd .
@@ -61,6 +61,11 @@ COPY --from=backend-builder /app/init.sql .
 # Create necessary directories
 RUN mkdir -p /music /playlists
 
+# Create non-root user (default uid 1000) - can be overridden via docker-compose user directive
+# This user is created with a shell so it can run the application
+RUN adduser -D -u 1000 -s /sbin/nologin musicd && \
+    chown -R musicd:musicd /app /music /playlists
+
 # Set environment variables with defaults
 ENV MUSIC_DIR=/music
 ENV PLAYLISTS_DIR=/playlists
@@ -70,5 +75,8 @@ ENV PATH_PREFIX=""
 # Expose port (adjust if needed)
 EXPOSE 8080
 
+# Run as non-root user by default (can be overridden)
+USER musicd
+
 # Run the application
-CMD ["/root/musicd"]
+CMD ["/app/musicd"]

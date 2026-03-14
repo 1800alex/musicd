@@ -27,11 +27,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    restart: unless-stopped
+    restart: unless-stopped    # Run as specified uid:gid (default 1000:1000). Override with: docker-compose -e MUSICD_UID=1001 -e MUSICD_GID=1001
+    user: "${MUSICD_UID:-1000}:${MUSICD_GID:-1000}"
     environment:
       - DATABASE_URL=postgres://music_user:music_pass@db:5432/musicdb?sslmode=disable
       - MUSIC_DIR=/music/
       - PLAYLISTS_DIR=/music/
+      - MUSICD_UID=${MUSICD_UID:-1000}
+      - MUSICD_GID=${MUSICD_GID:-1000}
     volumes:
       - /path/to/your/music:/music
 
