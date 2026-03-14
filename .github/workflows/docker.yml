@@ -39,7 +39,7 @@ jobs:
         id: meta-musicd-db
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-db
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
