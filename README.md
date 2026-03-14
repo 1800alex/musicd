@@ -1,6 +1,10 @@
 # musicd - Multi-Platform Music Server & Player
 
+> **Disclaimer**: This project was built with AI assistance. The core backend (Go) and lower-level frontend services were mostly written manually, but AI was instrumental in building the UI/visual components and helping structure the overall architecture. The project grew larger than originally anticipated, and turned out to be a much bigger undertaking than expected. I am sharing it in its current state in case it can be useful to others, but please be aware that it is still a work in progress and may have bugs, incomplete features, and areas that need improvement. Contributions are welcome!
+
 A comprehensive music server and player system with multiple frontends (web, desktop, iOS, Android) and a standalone music player daemon. Built with Go backend, Nuxt frontend, PostgreSQL database, and support for streaming.
+
+Perfect for self-hosting your music library and streaming to any device.
 
 ## Features
 
@@ -13,33 +17,30 @@ A comprehensive music server and player system with multiple frontends (web, des
 - 🔍 **Advanced Search**: Fast filtering by title, artist, album, genre, year, and more
 - 🖼️ **Album Artwork**: Display and manage album cover art from ID3 tags
 
-### Frontend Platforms
-- 🌐 **Web Interface**: Modern responsive web app (Nuxt + Vue.js)
-- 🖥️ **Desktop App**: Electron-based standalone desktop application
-- 📱 **iOS App**: Native iOS app using Capacitor
-- 🤖 **Android App**: Native Android app using Capacitor
+### Access Your Music Anywhere
+- 🌐 **Web Interface**: Modern responsive web app in any browser
+- 🖥️ **Desktop App**: Standalone Electron app for Linux, macOS, Windows
+- 📱 **Mobile Apps**: iOS and Android apps available
+  - ⚠️ **iOS**: Currently requires Apple Developer Account for building (help needed!)
+  - ⚠️ **Android**: Currently untested (I don't have an android phone, help needed!)
 - 🎨 **Responsive Design**: Works seamlessly across all screen sizes
 
 ### Playback & Control
 - 🎛️ **Audio Controls**: Play, pause, next, previous, shuffle, repeat, volume control
-- 🔊 **Streaming Support**: HTTP streaming with configurable bitrate
+- 🔊 **HTTP Streaming**: Stream audio to any connected device
 - 📡 **RTP Streaming**: Network audio streaming to compatible devices
-- 🎙️ **Media Session API**: Integration with OS media controls
+- 🎙️ **Media Session API**: Integration with OS media controls (desktop/mobile)
 - ⌨️ **Keyboard Shortcuts**: Global keyboard shortcuts for playback control
-- 🎚️ **Queue Management**: Full queue/playlist queue with drag-and-drop support
+- 🎚️ **Queue Management**: Add tracks/albums/playlists to queue
+- 🌐 **Remote Session Control**: Control playback from any device with API access
 
-### Backend Services
-- **musicd**: REST API server for music library, metadata, and playlist management
-- **musicplayerd**: Standalone daemon for local music playback with network control
-- **Music API**: RESTful API for all music operations
-- 🐳 **Docker Support**: Full Docker and Docker Compose configuration
+## Quick Start with Docker
 
-## Prerequisites
+### Prerequisites
 
-- **Docker** and **Docker Compose** (for running services)
-- **Git** (for cloning the repository)
-- **Make** (for build commands)
-- Internet connection to download Docker images
+- **Docker** and **Docker Compose** installed
+- **Git** for cloning the repository
+- Music files in a directory on your system
 
 ## Installation
 
@@ -63,14 +64,25 @@ docker-compose up -d
 ```
 
 4. **Access the applications**:
-   - Web UI: http://localhost:8080
-   - API: http://localhost:8080/api
+   - **Web UI**: http://localhost:8080
+   - **API**: http://localhost:8080/api
 
-The complete stack (musicd API server, musicplayerd daemon, and PostgreSQL database) will be running in Docker containers.
+The first startup will:
+- Initialize the PostgreSQL database
+- Scan your music library
+- Index all metadata
 
-## Running the AppImage
+## Running the Desktop App
 
-Download the latest AppImage for your platform from the releases page:
+Download the latest release from [GitHub Releases](https://github.com/1800alex/musicd/releases):
+
+- **Linux**: `Music.Player-*.AppImage`
+- **macOS**: `Music.Player-*.dmg`
+- **Windows**: `Music.Player-*.exe`
+
+The desktop app connects to your running musicd server (local or remote).
+
+### Running the AppImage on Linux
 
 For Linux:
 ```bash
@@ -81,113 +93,36 @@ chmod a+x Music.Player-0.0.1.AppImage
 ./Music.Player-0.0.1.AppImage --no-sandbox
 ```
 
-## Running the Application from source
+## Running Just the Player Daemon
 
-All services run in Docker containers orchestrated by `docker-compose.yml`. An example configuration is provided in `docker-compose.yml.example` with comments for customization.
+For headless systems or minimal resource usage, run just the music player daemon:
 
-### Build Services
+1. **Clone the example docker-compose file**:
+
+Setup your docker-compose file by copying the example and configuring it:
 ```bash
-make docker-build
+wget https://raw.githubusercontent.com/1800alex/musicd/main/examples/musicplayerd-only/docker-compose.yml -O docker-compose.yml
 ```
 
-### Start Services
+2. **Configure environment** (optional):
+Edit `docker-compose.yml` to set:
+- IP address of the musicd API server
+- Session name for the player daemon
+
+3. **Start the services**:
 ```bash
-make docker-up
+docker-compose pull
+docker-compose up -d
 ```
 
-The application will be available at:
-- Web UI: http://localhost:8080
-- API: http://localhost:8080/api
-- Database: localhost:5432
-
-### Stop Services
-```bash
-make docker-down
-```
-
-### View Logs
-```bash
-make docker-logs
-```
-
-### Development Notes
-
-For frontend development (hot reload), you can run the Nuxt dev server locally:
-```bash
-cd frontend
-corepack yarn install
-corepack yarn dev
-```
-
-This will start the frontend on http://localhost:3000 (proxying API calls to the backend).
-
-## Configuration
-
-All configuration is managed through `docker-compose.yml` and environment variables.
-
-### Key Configuration
-
-**docker-compose.yml** contains:
-- Music directory mount path
-- PostgreSQL database credentials
-- Service ports
-- Environment variables for both services
-
-**Database**: PostgreSQL is automatically initialized with `init.sql` on first run, creating tables for:
-- Tracks (music files with metadata)
-- Albums
-- Artists
-- Playlists
-- Queue state
-- User sessions
-
-### Customization
-
-Edit `docker-compose.yml` to:
-- Change music library path (`/home/alex/Music/Playlists` volume)
-- Modify service ports (default: 8080 for web UI, 5432 for database)
-- Configure streaming settings for musicplayerd
-- Adjust environment variables for both services
-
-## API Endpoints
-
-### Web Interface
-- `GET /` - Main application page (serves frontend)
-- `GET /static/*` - Static assets
-- `GET /icons/*` - Application icons
-
-### Music API
-- `GET /api/tracks` - Get all tracks with pagination and filtering
-- `GET /api/tracks/{id}` - Get track details
-- `GET /api/albums` - Get all albums
-- `GET /api/artists` - Get all artists
-- `GET /api/library/scan` - Scan music library (async)
-- `GET /music/:path` - Stream audio file
-
-### Playlists API
-- `GET /api/playlists` - Get all playlists
-- `GET /api/playlists/{id}` - Get playlist details
-- `POST /api/playlists` - Create new playlist
-- `PUT /api/playlists/{id}` - Update playlist
-- `DELETE /api/playlists/{id}` - Delete playlist
-- `POST /api/playlists/{id}/tracks` - Add track to playlist
-- `DELETE /api/playlists/{id}/tracks/{trackId}` - Remove track from playlist
-
-### Player Control API (musicplayerd)
-- `GET /api/player/status` - Get current playback status
-- `POST /api/player/play` - Start playback
-- `POST /api/player/pause` - Pause playback
-- `POST /api/player/next` - Skip to next track
-- `POST /api/player/previous` - Go to previous track
-- `POST /api/player/queue/add` - Add tracks to queue
-- `GET /api/player/queue` - Get current queue
+Now you should be able to control playback via the API or web interface while keeping the player daemon running on a separate machine or in a lightweight container.
 
 ## Usage
 
 ### Web Interface
 
-1. **Browse Your Library**: Access http://localhost:8080 to view your music collection
-   - Browse by Artists, Albums, or All Tracks
+1. **Browse Your Library**: Visit http://localhost:8080
+   - Browse by Artists, Albums, Playlists, or All Tracks
    - View cover art and metadata
    - Advanced filtering by genre, year, and more
 
@@ -195,12 +130,11 @@ Edit `docker-compose.yml` to:
    - Track title
    - Artist name
    - Album name
-   - Any metadata field
 
 3. **Create & Manage Playlists**:
    - Create new playlists from the interface
    - Add/remove tracks by dragging or using context menu
-   - Playlists are saved to the database
+   - Playlists are saved persistently both in the database and as M3U files
 
 4. **Playback Controls**:
    - Play, pause, next, previous buttons
@@ -208,264 +142,24 @@ Edit `docker-compose.yml` to:
    - Shuffle and repeat modes
    - Queue management
 
-### Desktop & Mobile Apps
-
-- **Electron Desktop**: Full-featured desktop application with offline support
-- **iOS App**: Native app with Media Session integration
-- **Android App**: Native app with Material Design
-- **Web PWA**: Progressive Web App for mobile browsers
-
-### Music Player Daemon (musicplayerd)
-
-The standalone player daemon allows:
-- Headless music playback on servers/headless systems
-- Remote control via API
-- Audio streaming to network devices
-- Queue management across network sessions
-
-Control the daemon:
-```bash
-# Programmatically via API
-curl http://localhost:8080/api/player/play
-```
-
 ### Library Scanning
 
-Automatic library scanning happens on startup. Manual rescan:
-- Via web interface: Library menu → Rescan
+Automatic scanning happens on startup in addition to a file watcher. Manual rescan is available as well:
+- Via web interface: Menu → Library Scan
 - Via API: `GET /api/library/scan`
-- Extracts metadata from ID3 tags
-- Indexes new files and removals
 
-## Technical Details
+## Raspberry Pi / aarch64 Support
 
-### Backend (Go)
-- **API Framework**: Standard library with modern REST architecture
-- **Database**: PostgreSQL for persistent storage with full-text search
-- **Music Processing**:
-  - dhowden/tag for ID3 metadata extraction
-  - File system scanning with recursive indexing
-- **Streaming**: FFmpeg/mpv integration for audio encoding and playback
-- **Concurrency**: goroutines for parallel library scanning
-
-### Frontend (Nuxt 3)
-- **Framework**: Vue 3 with Nuxt 3 for SSR/hybrid rendering
-- **UI Components**: Custom component library with Tailwind CSS
-- **State Management**: Pinia for centralized state
-- **Client Library**: Axios for API communication
-- **Media Controls**: Media Session API integration
-- **PWA**: Progressive Web App with offline support and install capability
-
-### Multi-Platform Support
-- **Web**: Standard browser (Chrome, Firefox, Safari, Edge)
-- **Desktop**: Electron with native integrations
-- **iOS**: Capacitor bridge to native APIs
-- **Android**: Capacitor bridge to native APIs
-
-### Audio Playback
-- **musicplayerd**: Built on mpv for reliable playback
-- **Supported Formats**: MP3, OGG, FLAC, M4A
-- **Streaming**: HTTP streaming, RTP multicast support
-- **Quality**: Configurable bitrate, format detection
-
-## Troubleshooting
-
-### Services Not Starting
-
-Check Docker status:
-```bash
-docker-compose ps
-make docker-logs
-```
-
-Verify Docker is installed and running:
-```bash
-docker --version
-docker-compose --version
-```
-
-### No Music Found
-
-1. Verify music directory path in `docker-compose.yml`
-2. Ensure music files are in supported formats: `.mp3`, `.ogg`, `.m4a`, `.flac`
-3. Rescan library: Web UI → Library → Rescan or API `GET /api/library/scan`
-4. Check logs: `make docker-logs | grep musicd`
-
-### Database Issues
-
-Check database logs:
-```bash
-docker-compose logs db
-```
-
-Reset database (loses all data):
-```bash
-make db-reset
-```
-
-### Web UI Not Loading
-
-1. Verify services are running: `docker-compose ps`
-2. Check if port 8080 is available: `lsof -i :8080`
-3. Clear browser cache: Ctrl+Shift+Delete (or Cmd+Shift+Delete on macOS)
-4. Check browser console (F12) for errors
-5. View application logs: `make docker-logs`
-
-### API Endpoint Issues
-
-Test API connectivity:
-```bash
-curl http://localhost:8080/api/tracks
-```
-
-Check application logs for errors:
-```bash
-make docker-logs
-```
-
-## Development
-
-### Docker Development
-
-All development uses Docker containers:
-
-**Build and start services**:
-```bash
-make docker-build
-make docker-up
-```
-
-**View container logs**:
-```bash
-make docker-logs
-```
-
-**Stop services**:
-```bash
-make docker-down
-```
-
-### Frontend Development
-
-For frontend hot reload during development:
+Docker images are built for both `amd64` and `aarch64` architectures, making musicd perfect for Raspberry Pi:
 
 ```bash
-make frontend-dev
+# Docker automatically pulls the correct image for your architecture
+docker-compose up -d
 ```
 
-This starts the Nuxt dev server on http://localhost:3000 with API proxying to the backend.
-
-**End-to-end tests** (Playwright):
-```bash
-make test-e2e
-```
-
-### Building Native Apps
-
-**iOS** (requires macOS and Xcode):
-```bash
-make cap-run-ios
-```
-
-**Android** (requires Android SDK):
-```bash
-make cap-run-android
-```
-
-**Electron Desktop**:
-```bash
-make electron-build
-```
-
-### Extending the Application
-
-#### Adding Music Metadata
-1. Extend database schema in `init.sql`
-2. Rebuild Docker image: `make docker-build`
-3. Restart services: `make docker-down && make docker-up`
-
-#### Custom Audio Streaming
-1. Modify streaming logic in `cmd/musicplayerd/stream.go`
-2. Configure streaming environment variables in `docker-compose.yml`
-3. Rebuild and restart: `make docker-build && make docker-up`
-
-#### Adding UI Features
-1. Create Vue components in `frontend/app/components/`
-2. Use Pinia stores for state management
-3. Test with Playwright: `cd frontend && corepack yarn test:e2e`
-4. Rebuild Docker image: `make docker-build`
-
-#### Building Native Apps
-**iOS** (requires macOS and Xcode):
-```bash
-make cap-run-ios
-```
-
-**Android** (requires Android SDK):
-```bash
-make cap-run-android
-```
-
-**Electron Desktop** (cross-platform):
-```bash
-make electron-build
-```
-
-## Deployment
-
-### Docker Deployment
-
-Deploy the complete stack (API server, player daemon, database) with:
-
-```bash
-make docker-build
-make docker-up
-```
-
-Services will be available at:
-- Web UI: http://localhost:8080
-- API: http://localhost:8080/api
-- Database: localhost:5432
-
-### Production Deployment
-
-For production deployments:
-
-1. **Use a reverse proxy** (nginx, Caddy) for HTTPS and load balancing
-2. **Set up environment variables** in docker-compose.yml for:
-   - Database credentials
-   - Music library paths
-   - Service configurations
-3. **Configure persistent volumes** for:
-   - Database data (`postgres_data`)
-   - Player daemon state (`musicplayerd_data`)
-   - Music library
-4. **Regular backups** of PostgreSQL data
-5. **Monitoring and logging** for all services
-
-Example production docker-compose configuration:
-```yaml
-services:
-  app:
-    image: musicd:latest
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: postgres://user:pass@db:5432/musicdb
-    volumes:
-      - /path/to/music:/music
-  musicplayerd:
-    image: musicd:latest
-    command: ./bin/musicplayerd
-    depends_on:
-      - app
-  db:
-    image: postgres:15-alpine
-    restart: unless-stopped
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-volumes:
-  postgres_data:
-```
+Supported on:
+- Raspberry Pi 3B+ and newer
+- Other aarch64 Linux systems
 
 ## Architecture
 
@@ -483,9 +177,9 @@ volumes:
 ├────────────────────────────────────┤
 │  Routes │ Handler │ Database Logic │
 └────────────────────────────────────┘
-         │
-    PostgreSQL
-         │
+         │                    │
+    PostgreSQL                │
+                              │
 ┌────────────────────────────────────┐
 │   musicplayerd (Player Daemon)     │
 ├──────────────┬─────────────────────┤
@@ -495,17 +189,120 @@ volumes:
     Audio Output
 ```
 
+## API Endpoints
+
+### Music Library
+- `GET /api/tracks` - Get all tracks with pagination and filtering
+- `GET /api/tracks/{id}` - Get track details
+- `GET /api/albums` - Get all albums
+- `GET /api/artists` - Get all artists
+- `GET /api/library/scan` - Scan music library (async)
+
+### Streaming
+- `GET /music/:path` - Stream audio file
+
+### Playlists
+- `GET /api/playlists` - Get all playlists
+- `POST /api/playlists` - Create new playlist
+- `PUT /api/playlists/{id}` - Update playlist
+- `DELETE /api/playlists/{id}` - Delete playlist
+- `POST /api/playlists/{id}/tracks` - Add track to playlist
+- `DELETE /api/playlists/{id}/tracks/{trackId}` - Remove track from playlist
+
+### Player Control
+- `GET /api/player/status` - Get current playback status
+- `POST /api/player/play` - Start playback
+- `POST /api/player/pause` - Pause playback
+- `POST /api/player/next` - Skip to next track
+- `POST /api/player/previous` - Go to previous track
+
+## Troubleshooting
+
+### Services Not Starting
+
+Check Docker status:
+```bash
+docker-compose ps
+docker-compose logs
+```
+
+Verify Docker is installed:
+```bash
+docker --version
+docker-compose --version
+```
+
+### No Music Found
+
+1. Verify music directory path in `docker-compose.yml`
+2. Ensure music files are in supported formats: `.mp3`, `.ogg`, `.m4a`, `.flac`
+3. Rescan library: Web UI → Menu → Library Scan
+4. Check logs: `docker-compose logs app`
+
+### Web UI Not Loading
+
+1. Verify services are running: `docker-compose ps`
+2. Check if port 8080 is available: `lsof -i :8080`
+3. Clear browser cache: Ctrl+Shift+Delete (Cmd+Shift+Delete on macOS)
+4. Check browser console (F12) for errors
+
+### Database Issues
+
+Check database logs:
+```bash
+docker-compose logs db
+```
+
+Reset database (loses all data):
+```bash
+docker-compose down -v
+docker-compose up -d
+```
+
+## Development
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for:
+- Building from source
+- Running development servers
+- Building native apps (iOS, Android, Electron)
+- Contributing guidelines
+- Architecture details
+
+## Deployment
+
+### Docker Deployment
+
+For production deployments:
+
+1. **Use a reverse proxy** (nginx, Caddy) for HTTPS and load balancing
+2. **Set secure environment variables** for database credentials
+3. **Configure persistent volumes** for:
+   - Database data
+   - Music library
+4. **Enable regular backups** of PostgreSQL data
+5. **Set up monitoring and logging** for all services
+
 ## Contributing
 
 Contributions are welcome! Areas for enhancement:
+- User authentication and multi-user support is completely unimplemented (help needed!)
+- Adding new playlists does not give users the option to specify the file path for the generated M3U playlist (help needed!)
+- iOS code signing and testing (need Apple Developer Account)
+- Android build testing and improvements
 - Transcoding support for additional audio formats
-- Additional audio codecs and streaming protocols
-- Performance optimizations for large libraries
-- Additional metadata providers (MusicBrainz, Spotify API integration)
-- Lyrics fetching and display (e.g. Genius API)
-- Mobile app improvements
+- Currently all audio is streamed as-is without transcoding. Adding on-the-fly transcoding would be slow, but if we pre-transcode and store additional formats we risk using more disk space. A possible solution is to add a transcoding queue that generates additional formats in the background after scanning new tracks.
+- Add support for metadata providers (MusicBrainz, Spotify API integration), currently all metadata is read from ID3 tags which can be incomplete or incorrect. Fetching metadata from online sources would allow for better organization and display of the music library.
+- Lyrics fetching and display is not currently implemented (help needed!)
 - Documentation and examples
+
+### Build Status
+
+The project uses GitHub Actions for automated builds:
+- **On Push Tags** (`v*`): Builds and releases all platforms
+  - Docker images for amd64 and aarch64
+  - Desktop apps for Linux, macOS, Windows
+  - Release with artifacts
 
 ## License
 
-This project is provided as-is. Feel free to modify and use for your needs.
+This project is licensed under the GPL-3.0 License - see the [COPYING](COPYING) file for details.
