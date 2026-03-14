@@ -32,6 +32,8 @@ const currentPage = ref(1);
 const totalPages = ref(1);
 const searchQuery = ref("");
 const totalTracks = ref(0);
+const showRemoveConfirm = ref(false);
+const trackToRemove = ref<Track | null>(null);
 
 // Color analysis variables
 const palette = ref<IColorPalette>({
@@ -161,10 +163,44 @@ const handleAddToQueue = (track: Track) => {
 
 const handleAddToPlaylist = async (track: Track, targetPlaylistName: string) => {
 	try {
-		await httpService.post(`/api/playlist/${encodeURIComponent(targetPlaylistName)}/add/${track.id}`, {});
+		// Find the playlist ID from the name
+		const targetPlaylist = appState.Playlists.find((p: Playlist) => p.name === targetPlaylistName);
+		if (!targetPlaylist) {
+			console.error(`Playlist "${targetPlaylistName}" not found`);
+			return;
+		}
+
+		await backendService.AddTrackToPlaylistById(track.id, targetPlaylist.id);
 		console.log(`Added "${track.title}" to playlist "${targetPlaylistName}"`);
 	} catch (error) {
 		console.error("Error adding track to playlist:", error);
+	}
+};
+
+const handleRemoveTrackClick = (track: Track) => {
+	trackToRemove.value = track;
+	showRemoveConfirm.value = true;
+};
+
+const cancelRemoveTrack = () => {
+	showRemoveConfirm.value = false;
+	trackToRemove.value = null;
+};
+
+const confirmRemoveTrack = async () => {
+	if (!trackToRemove.value || !playlist.value) {
+		return;
+	}
+
+	try {
+		await backendService.RemoveTrackFromPlaylistById(trackToRemove.value.id, playlistID.value);
+		console.log(`Removed "${trackToRemove.value.title}" from playlist "${playlist.value.name}"`);
+		showRemoveConfirm.value = false;
+		trackToRemove.value = null;
+		// Refresh the playlist tracks
+		await fetchPlaylist();
+	} catch (error) {
+		console.error("Error removing track from playlist:", error);
 	}
 };
 
@@ -310,12 +346,14 @@ watch(
 					:show-year="true"
 					:show-actions="true"
 					:search-placeholder="`Search tracks in ${playlist.name}...`"
+					:playlist-id="playlistID"
 					@search="handleSearch"
 					@page-change="handlePageChange"
 					@page-size-change="handlePageSizeChange"
 					@play-track="handlePlayTrack"
 					@add-to-queue="handleAddToQueue"
 					@add-to-playlist="handleAddToPlaylist"
+					@remove-from-playlist="handleRemoveTrackClick"
 					@search-focus="searchFocus"
 					@search-blur="searchBlur"
 				/>
@@ -345,6 +383,24 @@ watch(
 				<font-awesome-icon icon="fa-arrow-left" />
 				Back to Playlists
 			</NuxtLink>
+		</div>
+
+		<!-- Remove Track Confirmation Dialog -->
+		<div v-if="showRemoveConfirm && trackToRemove" class="modal is-active">
+			<div class="modal-background" @click="cancelRemoveTrack"></div>
+			<div class="modal-card">
+				<header class="modal-card-head">
+					<p class="modal-card-title">Remove Track</p>
+					<button class="delete" @click="cancelRemoveTrack"></button>
+				</header>
+				<section class="modal-card-body">
+					<p>Are you sure you want to remove <strong>{{ trackToRemove.title }}</strong> from this playlist?</p>
+				</section>
+				<footer class="modal-card-foot">
+					<button class="button" @click="cancelRemoveTrack">Cancel</button>
+					<button class="button is-danger" @click="confirmRemoveTrack">Remove</button>
+				</footer>
+			</div>
 		</div>
 	</div>
 </template>

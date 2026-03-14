@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, inject } from "vue";
-import type { Artist, Track, Album } from "~/types";
+import type { Artist, Track, Album, Playlist } from "~/types";
 import useAppState from "~/stores/appState";
 import awaitAppState from "~/composables/awaitAppState";
 import httpService from "~/services/http.service";
@@ -164,7 +164,14 @@ const handleAddToQueue = (track: Track) => {
 
 const handleAddToPlaylist = async (track: Track, playlistName: string) => {
 	try {
-		await httpService.post(`/api/playlist/${encodeURIComponent(playlistName)}/add/${track.id}`, {});
+		// Find the playlist ID from the name
+		const targetPlaylist = appState.Playlists.find((p: Playlist) => p.name === playlistName);
+		if (!targetPlaylist) {
+			console.error(`Playlist "${playlistName}" not found`);
+			return;
+		}
+
+		await backendService.AddTrackToPlaylistById(track.id, targetPlaylist.id);
 		console.log(`Added "${track.title}" to playlist "${playlistName}"`);
 	} catch (error) {
 		console.error("Error adding track to playlist:", error);

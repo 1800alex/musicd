@@ -270,6 +270,15 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 					appState.SetQueue([]);
 					appState.SetTemporaryQueue([]);
 					break;
+				case "remove_track_from_playlist": {
+					// Handle remote playlist track removal
+					const trackId = value?.id || value;
+					const playlistId = value?.playlist_id;
+					if (trackId && playlistId) {
+						await backendService.RemoveTrackFromPlaylistById(trackId, playlistId);
+					}
+					break;
+				}
 				default:
 					console.warn("Unknown command:", action);
 			}

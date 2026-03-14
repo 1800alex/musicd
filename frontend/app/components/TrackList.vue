@@ -20,6 +20,7 @@ const props = defineProps<{
 	showYear?: boolean;
 	showActions?: boolean;
 	searchPlaceholder?: string;
+	playlistId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -29,6 +30,7 @@ const emit = defineEmits<{
 	playTrack: [track: Track];
 	addToQueue: [track: Track];
 	addToPlaylist: [track: Track, playlist: string];
+	removeFromPlaylist: [track: Track];
 	searchFocus: [];
 	searchBlur: [];
 }>();
@@ -185,6 +187,10 @@ const addToQueue = (track: Track) => {
 
 const addToPlaylist = (track: Track, playlistName: string) => {
 	emit("addToPlaylist", track, playlistName);
+};
+
+const removeFromPlaylist = (track: Track) => {
+	emit("removeFromPlaylist", track);
 };
 
 const router = useRouter();
@@ -414,6 +420,19 @@ watch(
 											"
 										/>
 									</template>
+									<template v-if="playlistId">
+										<div class="track-actions-divider"></div>
+										<button
+											class="track-actions-menu-item track-actions-menu-item-danger"
+											@click="
+												removeFromPlaylist(track);
+												closeTrackMenu();
+											"
+										>
+											<font-awesome-icon icon="fa-trash" class="mr-2" />
+											Remove from Playlist
+										</button>
+									</template>
 								</div>
 							</div>
 						</td>
@@ -546,6 +565,15 @@ watch(
 .track-actions-menu-item:hover,
 .track-actions-menu-item:active {
 	background: var(--clr-surface-higher);
+}
+
+.track-actions-menu-item-danger {
+	color: var(--clr-error, #ff6b6b);
+}
+
+.track-actions-menu-item-danger:hover,
+.track-actions-menu-item-danger:active {
+	background: rgba(255, 107, 107, 0.1);
 }
 
 .track-actions-divider {

@@ -88,7 +88,14 @@ const handleAddToQueue = (track: Track) => {
 
 const handleAddToPlaylist = async (track: Track, playlistName: string) => {
 	try {
-		await backendService.AddTrackToPlaylist(track, playlistName);
+		// Find the playlist ID from the name
+		const targetPlaylist = appState.Playlists.find((p: Playlist) => p.name === playlistName);
+		if (!targetPlaylist) {
+			console.error(`Playlist "${playlistName}" not found`);
+			return;
+		}
+
+		await backendService.AddTrackToPlaylistById(track.id, targetPlaylist.id);
 		// TODO: Show success notification
 		console.log(`Added "${track.title}" to playlist "${playlistName}"`);
 	} catch (error) {
