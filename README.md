@@ -6,6 +6,18 @@ A comprehensive music server and player system with multiple frontends (web, des
 
 Perfect for self-hosting your music library and streaming to any device.
 
+## Free Software Commitment
+
+**musicd will always be free.** I will never charge for this software or any associated features. I believe music should be free for all, and this project is built on that principle.
+
+**This software is licensed under GPL-3.0**, which means:
+
+- ✅ You are free to use, modify, and distribute this software
+- ✅ Any derivative works or modifications must also be open source
+- ❌ **No one is permitted to commercialize musicd or any derivatives of it**
+
+If you create modifications or build upon this project, you must keep them open source and free for everyone. The GPL-3.0 license protects this commitment.
+
 ## Features
 
 ### Core Music Management
