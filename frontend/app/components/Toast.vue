@@ -100,27 +100,27 @@ defineExpose({
 }
 
 .toast-success {
-	background: rgba(76, 175, 80, 0.1);
-	border-left: 4px solid #4caf50;
-	color: #4caf50;
+	background: #4caf50;
+	border-left: 4px solid #45a049;
+	color: white;
 }
 
 .toast-error {
-	background: rgba(244, 67, 54, 0.1);
-	border-left: 4px solid #f44336;
-	color: #f44336;
+	background: #f44336;
+	border-left: 4px solid #da190b;
+	color: white;
 }
 
 .toast-warning {
-	background: rgba(255, 193, 7, 0.1);
-	border-left: 4px solid #ffc107;
-	color: #ffc107;
+	background: #ffc107;
+	border-left: 4px solid #e0a800;
+	color: white;
 }
 
 .toast-info {
-	background: rgba(33, 150, 243, 0.1);
-	border-left: 4px solid #2196f3;
-	color: #2196f3;
+	background: #2196f3;
+	border-left: 4px solid #0b7dda;
+	color: white;
 }
 
 .toast-content {
