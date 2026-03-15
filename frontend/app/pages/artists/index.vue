@@ -236,8 +236,8 @@ watch(
 								<div class="media-content">
 									<p class="title is-6">{{ artist.name }}</p>
 									<p class="subtitle is-7 has-text-grey">
-										{{ artist.albums.length }} album{{ artist.albums.length !== 1 ? "s" : "" }} •
-										{{ artist.tracks.length }} track{{ artist.tracks.length !== 1 ? "s" : "" }}
+										{{ artist.albums?.length || 0 }} album{{ (artist.albums?.length || 0) !== 1 ? "s" : "" }} •
+										{{ artist.track_count || artist.tracks?.length || 0 }} track{{ (artist.track_count || artist.tracks?.length || 0) !== 1 ? "s" : "" }}
 									</p>
 								</div>
 							</div>

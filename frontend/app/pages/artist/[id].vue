@@ -339,8 +339,8 @@ watch(
 							<div class="column">
 								<h1 class="title is-2" :style="{ color: palette.text }">{{ artist.name }}</h1>
 								<p class="subtitle is-5" :style="{ color: palette.text, opacity: 0.8 }">
-									{{ artist.albums.length }} album{{ artist.albums.length !== 1 ? "s" : "" }} •
-									{{ artist.tracks.length }} track{{ artist.tracks.length !== 1 ? "s" : "" }}
+									{{ artist.albums?.length || 0 }} album{{ (artist.albums?.length || 0) !== 1 ? "s" : "" }} •
+									{{ artist.track_count || artist.tracks?.length || 0 }} track{{ (artist.track_count || artist.tracks?.length || 0) !== 1 ? "s" : "" }}
 								</p>
 								<div class="page-actions">
 									<button class="page-action-btn page-action-btn-primary" @click="playAllTracks">
@@ -393,8 +393,8 @@ watch(
 										<div class="media-content">
 											<p class="title is-6">{{ album.name }}</p>
 											<p class="subtitle is-7 has-text-grey">
-												{{ album.year || "Unknown Year" }} • {{ album.tracks.length }} track{{
-													album.tracks.length !== 1 ? "s" : ""
+												{{ album.year || "Unknown Year" }} • {{ album.track_count || album.tracks?.length || 0 }} track{{
+													(album.track_count || album.tracks?.length || 0) !== 1 ? "s" : ""
 												}}
 											</p>
 										</div>
