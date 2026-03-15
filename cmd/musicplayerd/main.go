@@ -41,16 +41,17 @@ import (
 
 // Track mirrors the server's Track type.
 type Track struct {
-	ID          string  `json:"id"`
-	Filename    string  `json:"filename"`
-	Title       string  `json:"title"`
-	Artist      string  `json:"artist"`
-	Album       string  `json:"album"`
-	Year        int     `json:"year"`
-	FilePath    string  `json:"file_path"`
-	CoverArtID  string  `json:"cover_art_id"`
-	Duration    string  `json:"duration"`
-	DurationSec float64 `json:"duration_seconds"`
+	ID                  string  `json:"id"`
+	Filename            string  `json:"filename"`
+	Title               string  `json:"title"`
+	Artist              string  `json:"artist"`
+	Album               string  `json:"album"`
+	Year                int     `json:"year"`
+	FilePath            string  `json:"file_path"`
+	CoverArtID          string  `json:"cover_art_id"`
+	Duration            string  `json:"duration"`
+	DurationSec         float64 `json:"duration_seconds"`
+	PlaylistPositionID  string  `json:"playlist_position_id"` // Unique ID per playlist position (empty for non-playlist contexts)
 }
 
 // Config holds all daemon configuration from environment variables.
@@ -429,11 +430,12 @@ func (d *Daemon) handleCommand(action string, value interface{}) {
 	case "play_playlist_track":
 		if m, ok := value.(map[string]interface{}); ok {
 			id, _ := m["id"].(string)
+			playlistPositionID, _ := m["playlist_position_id"].(string)
 			pid, _ := m["playlist_id"].(string)
 			pname, _ := m["playlist_name"].(string)
 			search, _ := m["search"].(string)
 			d.setCurrentPlaylist(map[string]interface{}{"id": pid, "name": pname})
-			d.loadAndPlayFrom("/api/playlist/"+pid+"/tracks", id, search)
+			d.loadAndPlayFromPlaylist("/api/playlist/"+pid+"/tracks", id, playlistPositionID, search)
 		}
 	case "play_album":
 		if m, ok := value.(map[string]interface{}); ok {
@@ -546,6 +548,39 @@ func (d *Daemon) loadAndPlayFrom(apiPath, trackID, search string) {
 		if t.ID == trackID {
 			startIdx = i
 			break
+		}
+	}
+	selected := d.q.PlayTracks(tracks, startIdx)
+	d.playTrack(selected)
+}
+
+// loadAndPlayFromPlaylist is like loadAndPlayFrom but handles duplicate tracks in playlists
+// using the playlist_position_id to identify the exact track to play.
+func (d *Daemon) loadAndPlayFromPlaylist(apiPath, trackID, playlistPositionID, search string) {
+	if search != "" {
+		apiPath += "?search=" + url.QueryEscape(search)
+	}
+	tracks, err := d.fetchTracks(apiPath)
+	if err != nil || len(tracks) == 0 {
+		log.Printf("fetchTracks %s: %v", apiPath, err)
+		return
+	}
+	startIdx := 0
+	// If playlistPositionID is provided, use it (handles duplicates)
+	if playlistPositionID != "" {
+		for i, t := range tracks {
+			if t.PlaylistPositionID == playlistPositionID {
+				startIdx = i
+				break
+			}
+		}
+	} else {
+		// Fall back to track ID if no playlistPositionID
+		for i, t := range tracks {
+			if t.ID == trackID {
+				startIdx = i
+				break
+			}
 		}
 	}
 	selected := d.q.PlayTracks(tracks, startIdx)

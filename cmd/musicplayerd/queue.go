@@ -197,9 +197,13 @@ func (q *Queue) SetShuffle(on bool) {
 		rand.Shuffle(len(q.queue), func(i, j int) { q.queue[i], q.queue[j] = q.queue[j], q.queue[i] })
 	} else if !on && q.currentTrack != nil && len(q.originalTracks) > 0 {
 		// Find the current track's position in the original list.
+		// Use PlaylistPositionID if available (for handling duplicates), otherwise use track ID.
 		currentIdx := -1
 		for i, t := range q.originalTracks {
-			if t.ID == q.currentTrack.ID {
+			if q.currentTrack.PlaylistPositionID != "" && t.PlaylistPositionID == q.currentTrack.PlaylistPositionID {
+				currentIdx = i
+				break
+			} else if q.currentTrack.PlaylistPositionID == "" && t.ID == q.currentTrack.ID {
 				currentIdx = i
 				break
 			}

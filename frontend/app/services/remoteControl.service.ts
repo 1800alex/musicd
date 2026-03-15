@@ -203,12 +203,13 @@ export default class RemoteControlService {
 		this.sendCommand("play_playlist", { id: playlistId, name: playlistName });
 	}
 
-	public playPlaylistTrack(trackId: string, playlistId: string, playlistName?: string, search?: string) {
+	public playPlaylistTrack(trackId: string, playlistId: string, playlistName?: string, search?: string, playlistPositionId?: string) {
 		this.sendCommand("play_playlist_track", {
 			id: trackId,
 			playlist_id: playlistId,
 			playlist_name: playlistName,
-			search
+			search,
+			playlist_position_id: playlistPositionId
 		});
 	}
 

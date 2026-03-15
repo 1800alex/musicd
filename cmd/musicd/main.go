@@ -116,17 +116,18 @@ var hub = &SessionHub{sessions: make(map[string]*PlayerSession)}
 var serverHostname string
 
 type Track struct {
-	ID          string `json:"id"`
-	Filename    string `json:"filename"`
-	Title       string `json:"title"`
-	Artist      string `json:"artist"`
-	Album       string `json:"album"`
-	Year        int    `json:"year"`
-	FilePath    string `json:"file_path"`
-	FileHash    string `json:"file_hash"`
-	CoverArtID  string `json:"cover_art_id"`
-	Duration    string `json:"duration"`
-	DurationSec int    `json:"duration_seconds"`
+	ID                 string `json:"id"`
+	Filename           string `json:"filename"`
+	Title              string `json:"title"`
+	Artist             string `json:"artist"`
+	Album              string `json:"album"`
+	Year               int    `json:"year"`
+	FilePath           string `json:"file_path"`
+	FileHash           string `json:"file_hash"`
+	CoverArtID         string `json:"cover_art_id"`
+	Duration           string `json:"duration"`
+	DurationSec        int    `json:"duration_seconds"`
+	PlaylistPositionID string `json:"playlist_position_id"` // Unique ID per playlist position (empty for non-playlist contexts)
 }
 
 type Playlist struct {
@@ -2228,7 +2229,7 @@ func apiPlaylistTracksByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	if searchQuery != "" {
 		query = `
-			SELECT s.id, s.title, s.artist, s.album, s.year, s.file_path, s.cover_art_id, s.duration
+			SELECT ps.id, s.id, s.title, s.artist, s.album, s.year, s.file_path, s.cover_art_id, s.duration
 			FROM playlist_songs ps
 			JOIN songs s ON ps.song_id = s.id
 			WHERE ps.playlist_id = $1 AND (s.title ILIKE $2 OR s.artist ILIKE $2 OR s.album ILIKE $2)
@@ -2238,7 +2239,7 @@ func apiPlaylistTracksByIDHandler(w http.ResponseWriter, r *http.Request) {
 		args = []interface{}{playlistID, "%" + searchQuery + "%", pageSize, offset}
 	} else {
 		query = `
-			SELECT s.id, s.title, s.artist, s.album, s.year, s.file_path, s.cover_art_id, s.duration
+			SELECT ps.id, s.id, s.title, s.artist, s.album, s.year, s.file_path, s.cover_art_id, s.duration
 			FROM playlist_songs ps
 			JOIN songs s ON ps.song_id = s.id
 			WHERE ps.playlist_id = $1
@@ -2262,7 +2263,7 @@ func apiPlaylistTracksByIDHandler(w http.ResponseWriter, r *http.Request) {
 		var year *int
 		var duration *int
 
-		err := rows.Scan(&track.ID, &track.Title, &track.Artist, &track.Album, &year, &track.FilePath, &coverArtID, &duration)
+		err := rows.Scan(&track.PlaylistPositionID, &track.ID, &track.Title, &track.Artist, &track.Album, &year, &track.FilePath, &coverArtID, &duration)
 		if err != nil {
 			log.Printf("Error scanning track: %v", err)
 			continue

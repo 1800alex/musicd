@@ -37,6 +37,20 @@ class PlayerService {
 		}
 	}
 
+	/** Find the index of the current track in the queue, handling duplicates via playlist_position_id */
+	private findCurrentTrackIndex(): number {
+		const currentTrack = this.appState.CurrentTrack;
+		if (!currentTrack) return -1;
+
+		// If current track has a playlist_position_id, use that for comparison (handles duplicates)
+		if (currentTrack.playlist_position_id) {
+			return this.appState.TemporaryQueue.findIndex((t) => t.playlist_position_id === currentTrack.playlist_position_id);
+		}
+
+		// Otherwise, fall back to using track id
+		return this.appState.TemporaryQueue.findIndex((t) => t.id === currentTrack.id);
+	}
+
 	UpdateMediaSessionArtwork(artwork: { src?: string; type?: string; sizes?: string }) {
 		if (!this.topLevel) {
 			return; // Only update media session for top-level player
@@ -274,7 +288,7 @@ class PlayerService {
 			const nextTrack = this.appState.Queue[0]!;
 			this.appState.SetQueue(this.appState.Queue.slice(1));
 			// Splice into TemporaryQueue after the current position so Previous still works
-			const currentIndex = this.appState.TemporaryQueue.findIndex((t) => t.id === this.appState.CurrentTrack?.id);
+			const currentIndex = this.findCurrentTrackIndex();
 			const newTQ = [...this.appState.TemporaryQueue];
 			newTQ.splice(currentIndex >= 0 ? currentIndex + 1 : newTQ.length, 0, nextTrack);
 			this.appState.SetTemporaryQueue(newTQ);
@@ -296,9 +310,7 @@ class PlayerService {
 			}
 
 			if (this.appState.RepeatMode === RepeatMode.All) {
-				const currentIndex = this.appState.TemporaryQueue.findIndex(
-					(track) => track.id === this.appState.CurrentTrack?.id
-				);
+				const currentIndex = this.findCurrentTrackIndex();
 				if (currentIndex >= 0) {
 					const nextIndex = (currentIndex + 1) % this.appState.TemporaryQueue.length;
 					this.SetCurrentTrack(this.appState.TemporaryQueue[nextIndex]);
@@ -306,9 +318,7 @@ class PlayerService {
 				}
 			}
 
-			const currentIndex = this.appState.TemporaryQueue.findIndex(
-				(track) => track.id === this.appState.CurrentTrack?.id
-			);
+			const currentIndex = this.findCurrentTrackIndex();
 			if (currentIndex >= 0 && currentIndex < this.appState.TemporaryQueue.length - 1) {
 				this.SetCurrentTrack(this.appState.TemporaryQueue[currentIndex + 1]);
 				return;
@@ -335,9 +345,7 @@ class PlayerService {
 			}
 
 			if (this.appState.RepeatMode === RepeatMode.All) {
-				const currentIndex = this.appState.TemporaryQueue.findIndex(
-					(track) => track.id === this.appState.CurrentTrack?.id
-				);
+				const currentIndex = this.findCurrentTrackIndex();
 				if (currentIndex > 0) {
 					this.SetCurrentTrack(this.appState.TemporaryQueue[currentIndex - 1]);
 				} else {
@@ -346,9 +354,7 @@ class PlayerService {
 				return;
 			}
 
-			const currentIndex = this.appState.TemporaryQueue.findIndex(
-				(track) => track.id === this.appState.CurrentTrack?.id
-			);
+			const currentIndex = this.findCurrentTrackIndex();
 			if (currentIndex > 0) {
 				this.SetCurrentTrack(this.appState.TemporaryQueue[currentIndex - 1]);
 				return;
@@ -366,11 +372,9 @@ class PlayerService {
 		this.appState.SetShuffle(val);
 
 		if (this.appState.TemporaryQueue.length > 1 && this.appState.CurrentTrack) {
-			const currentId = this.appState.CurrentTrack.id;
-
 			if (val) {
 				// Turning shuffle ON: shuffle tracks after the current track.
-				const currentIndex = this.appState.TemporaryQueue.findIndex((t) => t.id === currentId);
+				const currentIndex = this.findCurrentTrackIndex();
 				if (currentIndex >= 0) {
 					const before = this.appState.TemporaryQueue.slice(0, currentIndex + 1);
 					const after = this.appState.TemporaryQueue.slice(currentIndex + 1);
@@ -379,6 +383,7 @@ class PlayerService {
 				}
 			} else if (this.appState.OriginalQueue.length > 0) {
 				// Turning shuffle OFF: restore original order from current position.
+				const currentId = this.appState.CurrentTrack.id;
 				const originalIndex = this.appState.OriginalQueue.findIndex((t) => t.id === currentId);
 				if (originalIndex >= 0) {
 					this.appState.SetTemporaryQueue([...this.appState.OriginalQueue]);
@@ -670,7 +675,7 @@ class PlayerService {
 	async PlayPlaylistTrack(track: Track, playlist: Playlist, search?: string) {
 		const rc = this.appState.RemoteControl;
 		if (rc) {
-			rc.playPlaylistTrack(track.id, playlist.id, playlist.name, search);
+			rc.playPlaylistTrack(track.id, playlist.id, playlist.name, search, track.playlist_position_id);
 			return;
 		}
 		this.appState.SetQueue([]);

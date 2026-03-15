@@ -223,10 +223,23 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 				case "play_playlist_track": {
 					const trackId = value?.id || value;
 					const playlistId = value?.playlist_id;
-					const track = await backendService.FetchTrackById(trackId);
+					const playlistPositionId = value?.playlist_position_id;
 					const playlist = await backendService.FetchPlaylist(playlistId);
-					if (track && playlist) {
-						player.PlayPlaylistTrack(track, playlist, value?.search);
+					if (playlist) {
+						// If we have a playlist_position_id, fetch all tracks and find the specific one
+						if (playlistPositionId) {
+							const tracksResponse = await backendService.FetchPlaylistTracks(playlistId, { pageSize: 10000 });
+							const track = tracksResponse?.data?.find((t: any) => t.playlist_position_id === playlistPositionId);
+							if (track) {
+								player.PlayPlaylistTrack(track, playlist, value?.search);
+							}
+						} else {
+							// Fall back to fetching by track ID (may select first occurrence if duplicates exist)
+							const track = await backendService.FetchTrackById(trackId);
+							if (track) {
+								player.PlayPlaylistTrack(track, playlist, value?.search);
+							}
+						}
 					}
 					break;
 				}

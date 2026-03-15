@@ -10,6 +10,7 @@ export interface Track {
 	cover_art_id?: string;
 	duration?: number;
 	duration_seconds?: number;
+	playlist_position_id?: string; // Unique ID per playlist position (for deduplication when same track appears multiple times)
 }
 
 export interface Playlist {
