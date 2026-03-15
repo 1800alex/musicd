@@ -2344,7 +2344,8 @@ func apiAddToPlaylistByIDHandler(w http.ResponseWriter, r *http.Request) {
 	// Add track to playlist in database
 	_, err = db.Exec("INSERT INTO playlist_songs (playlist_id, song_id, position) VALUES ($1, $2, $3)", playlistID, trackID, nextPosition)
 	if err != nil {
-		http.Error(w, "Error adding track to playlist", http.StatusInternalServerError)
+		log.Printf("Error adding track %s to playlist %s: %v", trackID, playlistID, err)
+		http.Error(w, fmt.Sprintf("Error adding track to playlist: %v", err), http.StatusInternalServerError)
 		return
 	}
 

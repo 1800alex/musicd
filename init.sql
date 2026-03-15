@@ -89,10 +89,11 @@ CREATE TABLE playlists (
 
 -- Playlist Songs junction table
 CREATE TABLE playlist_songs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     playlist_id UUID NOT NULL REFERENCES playlists(id) ON DELETE CASCADE,
     song_id UUID NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
     position INTEGER NOT NULL,
-    PRIMARY KEY (playlist_id, song_id)
+    UNIQUE(playlist_id, position)
 );
 
 -- Posts table
