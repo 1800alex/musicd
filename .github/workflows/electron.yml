@@ -16,9 +16,10 @@ jobs:
           - os: windows-latest
             artifact: "*.exe"
             artifact_name: "musicd-windows"
-          - os: macos-latest
-            artifact: "*.dmg"
-            artifact_name: "musicd-macos"
+          ## Building the macOS version is currently disabled since github jacked up their prices.
+          # - os: macos-latest
+          #   artifact: "*.dmg"
+          #   artifact_name: "musicd-macos"
 
     runs-on: ${{ matrix.os }}
 
