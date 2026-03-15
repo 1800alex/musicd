@@ -14,8 +14,10 @@ import { useNativeAudio } from "~/composables/useNativeAudio";
 import { isNativeOrElectron } from "@/utils/platform";
 import { useImageUrl } from "~/composables/useImageUrl";
 import { useBackendURL } from "~/composables/useBackendURL";
+import { useHaptics } from "../composables/useHaptics";
 
 const appState = useAppState();
+const { tap, heavyTap, selectionChanged } = useHaptics();
 const router = useRouter();
 const { getImageUrl } = useImageUrl();
 const { getHTTPURL } = useBackendURL();
@@ -52,6 +54,12 @@ const showRemoteDropdown = ref(false);
 const showPlaylistDropdown = ref(false);
 const backgroundColor = ref(BACKGROUND_COLOR_DEFAULT); // Default background color
 
+// Touch tracking for swipe-down gesture to close mobile player
+let touchStartY = 0;
+let touchStartTime = 0;
+const SWIPE_DOWN_THRESHOLD = 50; // pixels
+const SWIPE_TIME_THRESHOLD = 300; // milliseconds
+
 // Server connectivity and remote server URL config (native/electron only)
 const serverURL = ref(localStorage.getItem("backendURL") || "");
 const editingServerURL = ref(false);
@@ -77,6 +85,27 @@ const closeRemoteDropdown = () => {
 };
 const closeMobilePlayerMenu = () => {
 	showMobilePlayerMenu.value = false;
+};
+
+// Handle swipe down to close mobile player
+const handleMobilePlayerTouchStart = (e: Event) => {
+	const touch = (e as TouchEvent).touches[0];
+	touchStartY = touch?.clientY || 0;
+	touchStartTime = Date.now();
+};
+
+const handleMobilePlayerTouchEnd = async (e: Event) => {
+	const touch = (e as TouchEvent).changedTouches[0];
+	const touchEndY = touch?.clientY || 0;
+	const touchEndTime = Date.now();
+	const deltaY = touchEndY - touchStartY;
+	const deltaTime = touchEndTime - touchStartTime;
+
+	// Check if it's a downward swipe within time threshold
+	if (deltaY > SWIPE_DOWN_THRESHOLD && deltaTime < SWIPE_TIME_THRESHOLD) {
+		await heavyTap();
+		showMobilePlayer.value = false;
+	}
 };
 
 const closePlaylistDropdown = () => {
@@ -450,26 +479,31 @@ const navigateToAllTracks = () => {
 };
 
 // Audio player methods
-const togglePlay = () => {
+const togglePlay = async () => {
+	await tap();
 	player.value?.TogglePlay();
 };
 
 // TODO Ideally we should make a class for the queue management
 // and handle all the logic there instead of in the component
 
-const nextTrack = () => {
+const nextTrack = async () => {
+	await selectionChanged();
 	player.value?.NextTrack();
 };
 
-const previousTrack = () => {
+const previousTrack = async () => {
+	await selectionChanged();
 	player.value?.PreviousTrack();
 };
 
-const toggleShuffle = () => {
+const toggleShuffle = async () => {
+	await tap();
 	player.value?.SetShuffle(!appState.Shuffle);
 };
 
-const toggleRepeat = () => {
+const toggleRepeat = async () => {
+	await tap();
 	player.value?.CycleRepeatMode();
 };
 
@@ -588,7 +622,8 @@ const formatTime = (seconds: number) => {
 	return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
-const toggleMobilePlayer = () => {
+const toggleMobilePlayer = async () => {
+	await tap();
 	showMobilePlayer.value = !showMobilePlayer.value;
 };
 
@@ -689,7 +724,7 @@ onMounted(async () => {
 	keyboardShortcuts = useKeyboardShortcuts({
 		player: svc,
 		onToggleFullscreen: () => {
-			toggleMobilePlayer();
+			void toggleMobilePlayer();
 		},
 		onToggleVisualizer: () => {
 			showVisualizerOverlay.value = !showVisualizerOverlay.value;
@@ -712,10 +747,20 @@ onMounted(async () => {
 	document.addEventListener("click", closeMobilePlayerMenu);
 	document.addEventListener("click", closePlaylistDropdown);
 
-	// Watch for theme changes
+	// Watch for theme changes and swipe gesture handling
 	// iOS theme-color: directly update DOM meta tag for reliable Safari support
 	watch(showMobilePlayer, (open) => {
 		backgroundColor.value = open ? BACKGROUND_COLOR_MOBILE_PLAYER : BACKGROUND_COLOR_DEFAULT;
+
+		// Add/remove touch listeners for swipe-down gesture
+		const mobilePlayer = document.querySelector(".mobile-fullscreen-player");
+		if (open && mobilePlayer) {
+			mobilePlayer.addEventListener("touchstart", handleMobilePlayerTouchStart);
+			mobilePlayer.addEventListener("touchend", handleMobilePlayerTouchEnd);
+		} else if (mobilePlayer) {
+			mobilePlayer.removeEventListener("touchstart", handleMobilePlayerTouchStart);
+			mobilePlayer.removeEventListener("touchend", handleMobilePlayerTouchEnd);
+		}
 	});
 
 	watch(backgroundColor, (val) => {
@@ -852,6 +897,13 @@ onBeforeUnmount(() => {
 	document.removeEventListener("click", closeRemoteDropdown);
 	document.removeEventListener("click", closeMobilePlayerMenu);
 	document.removeEventListener("click", closePlaylistDropdown);
+
+	// Clean up touch listeners for mobile player
+	const mobilePlayer = document.querySelector(".mobile-fullscreen-player");
+	if (mobilePlayer) {
+		mobilePlayer.removeEventListener("touchstart", handleMobilePlayerTouchStart);
+		mobilePlayer.removeEventListener("touchend", handleMobilePlayerTouchEnd);
+	}
 
 	// Clean up polling intervals
 	if (scanStatusPollInterval) {
