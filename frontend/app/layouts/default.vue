@@ -1221,7 +1221,6 @@ onBeforeUnmount(() => {
 				<div class="audio-player-left">
 					<div class="level-item">
 						<figure
-							v-if="appState.CurrentTrack.cover_art_id"
 							data-testid="player-cover-art"
 							class="image is-48x48 clickable-cover"
 							@click="toggleMobilePlayer()"
@@ -1234,6 +1233,9 @@ onBeforeUnmount(() => {
 								loading="lazy"
 								@load="coverArtLoaded()"
 							/>
+							<div v-else class="player-cover-placeholder">
+								<font-awesome-icon icon="fa-music" />
+							</div>
 						</figure>
 						<div class="ml-3 track-info">
 							<MarqueeText data-testid="player-track-title" class="has-text-white has-text-weight-semibold">
@@ -1369,11 +1371,15 @@ onBeforeUnmount(() => {
 			@click="showMobilePlayer = true"
 		>
 			<div class="mobile-mini-progress" :style="{ width: seekPosition + '%' }"></div>
-			<figure v-if="appState.CurrentTrack.cover_art_id" class="mobile-mini-cover">
+			<figure class="mobile-mini-cover">
 				<img
+					v-if="appState.CurrentTrack.cover_art_id"
 					:src="getImageUrl(`/api/cover-art/${appState.CurrentTrack.cover_art_id}`)"
 					:alt="`${appState.CurrentTrack.album} cover`"
 				/>
+				<div v-else class="mobile-mini-cover-placeholder">
+					<font-awesome-icon icon="fa-music" />
+				</div>
 			</figure>
 			<div class="mobile-mini-info">
 				<p class="mobile-mini-title">{{ appState.CurrentTrack.title }}</p>
@@ -1891,6 +1897,18 @@ onBeforeUnmount(() => {
 	border-radius: 4px;
 }
 
+.mobile-mini-cover-placeholder {
+	width: 100%;
+	height: 100%;
+	background: var(--clr-surface-elevated);
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.5rem;
+	color: var(--clr-text-muted);
+}
+
 .mobile-mini-info {
 	flex: 1;
 	min-width: 0;
@@ -2246,5 +2264,27 @@ onBeforeUnmount(() => {
 		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 		padding: 0.5rem 0;
 	}
+}
+
+/* Player cover placeholder styles */
+.player-cover-placeholder {
+	width: 100%;
+	height: 100%;
+	background: var(--clr-surface-elevated);
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.5rem;
+	color: var(--clr-text-muted);
+}
+
+.clickable-cover {
+	cursor: pointer;
+	transition: opacity 0.2s ease;
+}
+
+.clickable-cover:hover {
+	opacity: 0.8;
 }
 </style>
