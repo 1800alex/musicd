@@ -447,6 +447,7 @@ To start the application, open a console, cd into "{installation home}/bin" and 
 ANDROID_SDK_ROOT=~/Android/Sdk make cap-run-android
 ```
 
+When the android emulator starts, it should open our app. For the remote url you'll want to enter `http://10.0.2.2:8080` which is the special alias to access localhost from the emulator. (If you change the backend port, make sure to update this URL accordingly)
 
 ## Version Management
 

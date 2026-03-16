@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
 		// In production, the app loads from the bundled web assets.
 		// For development, uncomment the url below and set it to your dev server:
 		// url: "http://YOUR_LOCAL_IP:3000/ui/",
-		androidScheme: "https"
+		androidScheme: "http"
 	},
 	ios: {
 		// Allow inline media playback (required for background audio)
