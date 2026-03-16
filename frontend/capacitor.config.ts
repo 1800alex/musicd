@@ -19,7 +19,8 @@ const config: CapacitorConfig = {
 		scheme: "capacitor"
 	},
 	android: {
-		backgroundColor: "#1a1a1a"
+		backgroundColor: "#1a1a1a",
+		allowMixedContent: true
 	},
 	plugins: {
 		App: {
