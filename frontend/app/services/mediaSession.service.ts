@@ -18,8 +18,6 @@ export class MediaSessionService {
 		this.isSupported = "mediaSession" in navigator;
 		if (this.isSupported) {
 			this.setupDefaultHandlers();
-		} else {
-			console.warn("Media Session API is not supported in this browser");
 		}
 	}
 
@@ -149,7 +147,6 @@ export class MediaSessionService {
 
 	async updateFromTrack(track: Track) {
 		if (!this.isSupported) {
-			console.warn("Media Session API not supported, cannot update metadata");
 			return;
 		}
 		if (!this.currentTrack) {
