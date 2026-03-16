@@ -3,7 +3,7 @@ import type { NitroConfig } from "nitropack";
 
 const apiKey = "";
 
-const baseUrl = process.env.ELECTRON_BUILD ? "/" : "/ui/";
+const baseUrl = process.env.ELECTRON_BUILD || process.env.CAPACITOR_BUILD ? "/" : "/ui/";
 const apiPrefix = ""; // TODO: fetch public.apiURL from the runtime config (use node env?)
 
 const routeRules: NitroConfig["routeRules"] = {};

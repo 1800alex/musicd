@@ -160,8 +160,8 @@ db-reset:
 
 # Capacitor - build frontend and sync to native platforms
 .PHONY: cap-build
-cap-build: frontend
-	@cd ./frontend && npx cap sync
+cap-build:
+	@cd ./frontend && corepack yarn install && CAPACITOR_BUILD=1 corepack yarn generate && npx cap sync
 
 # Capacitor - sync web assets only (after manual frontend build)
 .PHONY: cap-sync
@@ -195,6 +195,10 @@ cap-run-ios: cap-build
 .PHONY: cap-run-android
 cap-run-android: cap-build
 	@cd ./frontend && npx cap run android
+
+.PHONY: android-build
+android-build: cap-build
+	@cd ./frontend && chmod +x gradlew && ./gradlew assembleRelease
 
 # Electron - development mode
 .PHONY: electron-dev
