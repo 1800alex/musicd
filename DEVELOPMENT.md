@@ -433,6 +433,21 @@ git lfs install
 git lfs pull
 ```
 
+## Android
+
+First make sure you have `javac` (Java 21+) installed and available in your PATH. For me on ubuntu 25 I did: `sudo apt install openjdk-25-jdk`
+
+Download and set up [Android Studio](https://developer.android.com/studio/install) with the Android SDK.
+
+Unpack the Android Studio distribution archive that you downloaded where you wish to install the program.
+
+To start the application, open a console, cd into "{installation home}/bin" and type: `./studio` this will download and install the sdk and emulator.
+
+```bash
+ANDROID_SDK_ROOT=~/Android/Sdk make cap-run-android
+```
+
+
 ## Version Management
 
 The project uses semantic versioning for releases. Version tags should follow the `v*` pattern (e.g., `v1.0.0`, `v0.1.0`).
