@@ -910,8 +910,29 @@ func main() {
 		io.Copy(w, fallbackFile)
 	}).Methods("GET")
 
+	// Wrap with CORS middleware for native app (Capacitor/Electron) access
+	handler := corsMiddleware(r)
+
 	fmt.Println("Music player starting on :8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(":8080", handler))
+}
+
+// corsMiddleware adds CORS headers so native apps (Capacitor, Electron) can
+// reach the API from origins like https://localhost or app://-
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		}
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // buildArtistsAndAlbums organizes tracks into artists and albums
