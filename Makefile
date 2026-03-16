@@ -135,6 +135,7 @@ clean: db-down docker-down
 	rm -rf bin/
 
 # Docker commands
+.PHONY: docker-build docker-up docker-down docker-clean docker-logs
 docker-build:
 	docker-compose build
 
@@ -143,6 +144,9 @@ docker-up:
 
 docker-down:
 	docker-compose down --remove-orphans
+
+docker-clean:
+	docker-compose down --remove-orphans -v
 
 docker-logs:
 	docker-compose logs -f
