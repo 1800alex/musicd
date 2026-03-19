@@ -9164,6 +9164,7 @@ __metadata:
     vue-component-type-helpers: "npm:^3.0.4"
     vue-router: "npm:^4.5.1"
     vue-tsc: "npm:^3.0.4"
+    vue3-touch-events: "npm:^5.0.15"
     zxcvbn: "npm:^4.4.2"
   languageName: unknown
   linkType: soft
@@ -13535,6 +13536,15 @@ __metadata:
   bin:
     vue-tsc: bin/vue-tsc.js
   checksum: 10c0/8b4937ee1a9c827ee14d2bd6984e128ac721d04751805b17d79636473bdb0078faa0e91c0dd2f04cda7c8cf856d3dd3d46f186272a2640aca77f399140f75305
+  languageName: node
+  linkType: hard
+
+"vue3-touch-events@npm:^5.0.15":
+  version: 5.0.15
+  resolution: "vue3-touch-events@npm:5.0.15"
+  peerDependencies:
+    vue: ^3.0.0
+  checksum: 10c0/6a76dde8befeb1d78107a429cc604d4a0196efb4fbbb88cef7e20132dc6bc1fe7c5fc316ccbc3a31b2ee531ba412f3a8d8e358b1ac78cf3f2d714dbfcdaea24c
   languageName: node
   linkType: hard
 

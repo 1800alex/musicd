@@ -54,6 +54,7 @@
 		"vue": "^3.5.18",
 		"vue-component-type-helpers": "^3.0.4",
 		"vue-router": "^4.5.1",
+		"vue3-touch-events": "^5.0.15",
 		"zxcvbn": "^4.4.2"
 	},
 	"devDependencies": {

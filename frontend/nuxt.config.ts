@@ -112,7 +112,7 @@ export default defineNuxtConfig({
 			pathPrefix: false
 		}
 	],
-	modules: ["@pinia/nuxt", "@nuxt/fonts", "@nuxt/eslint"],
+	modules: ["@pinia/nuxt", "@nuxt/fonts", "@nuxt/eslint", "vue3-touch-events"],
 	css: [
 		"@/assets/css/theme.scss",
 		"bulma",
