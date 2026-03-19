@@ -153,8 +153,11 @@ const onMainPlayerSwipeUp = async () => {
 };
 
 // Mobile player drag handlers for visual feedback
-// Mobile player drag handlers for visual feedback
 const onMobilePlayerDragging = (e: TouchEvent) => {
+	if (!e.touches || 0 === e.touches.length) {
+		return;
+	}
+
 	const touch = e.touches[0];
 	if (!touch) {
 		return;
@@ -1540,8 +1543,7 @@ onBeforeUnmount(() => {
 				data-testid="mobile-player"
 				class="mobile-fullscreen-player"
 				:style="{
-					transform: `translateY(${mobilePlayerDragOffsetY}px) translateX(${mobilePlayerDragOffsetX * 0.1}px)`,
-					opacity: mobilePlayerDragOpacity,
+					transform: `translateY(${mobilePlayerDragOffsetY}px)`,
 					transition: isDraggingMobilePlayer ? 'none' : 'all 0.3s ease-out'
 				}"
 				@touchend="onMobilePlayerDragEnd"
