@@ -1230,7 +1230,6 @@ onBeforeUnmount(() => {
 			<div
 				v-touch:swipe.left="mobilePlayer.onMiniPlayerSwipeLeft"
 				v-touch:swipe.right="mobilePlayer.onMiniPlayerSwipeRight"
-				v-touch:swipe.up="mobilePlayer.onMiniPlayerSwipeUp"
 				class="audio-player-controls"
 				@touchstart="mobilePlayer.onMiniPlayerDragging"
 				@touchmove="mobilePlayer.onMiniPlayerDragging"
@@ -1386,7 +1385,6 @@ onBeforeUnmount(() => {
 			v-if="appState.CurrentTrack && !mobilePlayer.state.showFullscreen && (serverConnected || !isNativeOrElectron)"
 			v-touch:swipe.left="mobilePlayer.onMiniPlayerSwipeLeft"
 			v-touch:swipe.right="mobilePlayer.onMiniPlayerSwipeRight"
-			v-touch:swipe.up="mobilePlayer.onMiniPlayerSwipeUp"
 			data-testid="mobile-mini-player"
 			class="mobile-mini-player"
 			:style="{
