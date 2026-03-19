@@ -1418,8 +1418,6 @@ onBeforeUnmount(() => {
 		<transition name="mobile-player-slide">
 			<div
 				v-if="mobilePlayer.shouldShowFullscreen && appState.CurrentTrack && (serverConnected || !isNativeOrElectron)"
-				v-touch:swipe.left="mobilePlayer.onFullscreenSwipeLeft"
-				v-touch:swipe.right="mobilePlayer.onFullscreenSwipeRight"
 				v-touch:drag="mobilePlayer.onFullscreenDragging"
 				v-touch:release="mobilePlayer.onFullscreenDragEnd"
 				data-testid="mobile-player"

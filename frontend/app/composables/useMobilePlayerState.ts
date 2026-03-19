@@ -246,14 +246,29 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 
 	async function onFullscreenDragEnd(): Promise<void> {
 		const elapsed = Date.now() - state.fullscreenDrag.startTime;
-		const velocity = elapsed > 0 ? state.fullscreenDrag.offsetY / elapsed : 0;
-		const screenPercent = state.fullscreenDrag.offsetY / window.innerHeight;
+		const axis = state.fullscreenDrag.lockedAxis;
 
-		const shouldCommit = velocity > VELOCITY_THRESHOLD || screenPercent > SCREEN_PERCENT_THRESHOLD;
+		if (axis === "vertical") {
+			// Vertical: close gesture
+			const velocity = elapsed > 0 ? state.fullscreenDrag.offsetY / elapsed : 0;
+			const screenPercent = state.fullscreenDrag.offsetY / window.innerHeight;
+			const shouldCommit = velocity > VELOCITY_THRESHOLD || screenPercent > SCREEN_PERCENT_THRESHOLD;
 
-		if (shouldCommit && state.fullscreenDrag.offsetY > 0) {
-			await heavyTap();
-			state.showFullscreen = false;
+			if (shouldCommit && state.fullscreenDrag.offsetY > 0) {
+				await heavyTap();
+				state.showFullscreen = false;
+			}
+		} else if (axis === "horizontal") {
+			// Horizontal: track change gesture
+			const absX = Math.abs(state.fullscreenDrag.offsetX);
+			const velocity = elapsed > 0 ? absX / elapsed : 0;
+			const screenPercent = absX / window.innerWidth;
+			const shouldCommit = velocity > VELOCITY_THRESHOLD || screenPercent > SCREEN_PERCENT_THRESHOLD;
+
+			if (shouldCommit && absX > 0) {
+				const direction = state.fullscreenDrag.offsetX < 0 ? "left" : "right";
+				await swipeTrackChange(direction);
+			}
 		}
 
 		// Reset drag state with animation
