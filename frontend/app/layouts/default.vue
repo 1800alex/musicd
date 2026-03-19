@@ -186,13 +186,17 @@ const onMobilePlayerDragging = (e: TouchEvent) => {
 	const deltaY = currentY - dragStartY.value;
 	const deltaX = currentX - dragStartX.value;
 
-	// Update offsets for animation
-	mobilePlayerDragOffsetY.value = deltaY > 0 ? deltaY : 0; // Only allow downward drag
+	// Threshold before animation starts
+	const dragThresholdStart = 100;
+	const adjustedDeltaY = Math.max(0, deltaY - dragThresholdStart);
+
+	// Update offsets for animation (only after threshold)
+	mobilePlayerDragOffsetY.value = adjustedDeltaY;
 	mobilePlayerDragOffsetX.value = deltaX;
 
 	// Calculate opacity based on vertical drag (fade out as user drags down)
 	const maxDragY = 200; // pixels needed to fully fade out
-	const opacityFade = Math.max(0, 1 - Math.abs(deltaY) / maxDragY);
+	const opacityFade = Math.max(0, 1 - Math.abs(adjustedDeltaY) / maxDragY);
 	mobilePlayerDragOpacity.value = opacityFade;
 };
 
