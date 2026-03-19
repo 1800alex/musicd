@@ -15,13 +15,15 @@ import { isNativeOrElectron } from "@/utils/platform";
 import { useImageUrl } from "~/composables/useImageUrl";
 import { useBackendURL } from "~/composables/useBackendURL";
 import { useHaptics } from "../composables/useHaptics";
+import { useMobilePlayerState } from "~/composables/useMobilePlayerState";
 
 const appState = useAppState();
-const { tap, heavyTap, selectionChanged } = useHaptics();
+const { tap, selectionChanged } = useHaptics();
 const router = useRouter();
 const { getImageUrl } = useImageUrl();
 const { getHTTPURL } = useBackendURL();
 const player = ref<PlayerService | null>(null);
+const mobilePlayer = useMobilePlayerState(player);
 
 const BACKGROUND_COLOR_DEFAULT = "#282828";
 const BACKGROUND_COLOR_MOBILE_PLAYER = "#121212";
@@ -48,24 +50,9 @@ const showVisualizerOverlay = ref(false);
 const showLyricsModal = ref(false);
 const isLoading = ref(false);
 const isSearchFocused = ref(false);
-const showMobilePlayer = ref(false);
-const showMobilePlayerMenu = ref(false);
 const showRemoteDropdown = ref(false);
 const showPlaylistDropdown = ref(false);
 const backgroundColor = ref(BACKGROUND_COLOR_DEFAULT); // Default background color
-
-// Mobile player drag state for visual feedback
-const mobilePlayerDragOffsetY = ref(0);
-const mobilePlayerDragOffsetX = ref(0);
-const mobilePlayerDragOpacity = ref(1);
-const isDraggingMobilePlayer = ref(false);
-const dragStartY = ref(0);
-const dragStartX = ref(0);
-
-// Mini player drag state for visual feedback
-const miniPlayerDragOffsetY = ref(0);
-const isDraggingMiniPlayer = ref(false);
-const miniPlayerDragStartY = ref(0);
 
 // Server connectivity and remote server URL config (native/electron only)
 const serverURL = ref(localStorage.getItem("backendURL") || "");
@@ -91,171 +78,7 @@ const closeRemoteDropdown = () => {
 	showRemoteDropdown.value = false;
 };
 const closeMobilePlayerMenu = () => {
-	showMobilePlayerMenu.value = false;
-};
-
-// Touch gesture handlers for vue3-touch-events with debouncing
-let lastSwipeTime = 0;
-const SWIPE_DEBOUNCE_MS = 1000;
-
-const isSwipeDebounced = () => {
-	const now = Date.now();
-	if (now - lastSwipeTime < SWIPE_DEBOUNCE_MS) {
-		return true;
-	}
-	lastSwipeTime = now;
-	return false;
-};
-
-const onMobilePlayerSwipeDown = async () => {
-	if (isSwipeDebounced()) {
-		return;
-	}
-	console.log("Swiped down on mobile player, closing player");
-	await heavyTap();
-	showMobilePlayer.value = false;
-};
-
-const onMobilePlayerSwipeLeft = async () => {
-	if (isSwipeDebounced()) {
-		return;
-	}
-	console.log("Swiped left on mobile player, going to next track");
-	await nextTrack();
-};
-
-const onMobilePlayerSwipeRight = async () => {
-	if (isSwipeDebounced()) {
-		return;
-	}
-	console.log("Swiped right on mobile player, going to previous track");
-	await previousTrack();
-};
-
-const onMainPlayerSwipeLeft = async () => {
-	if (isSwipeDebounced()) {
-		return;
-	}
-	console.log("Swiped left on main player, going to next track");
-	await nextTrack();
-};
-
-const onMainPlayerSwipeRight = async () => {
-	if (isSwipeDebounced()) {
-		return;
-	}
-	console.log("Swiped right on main player, going to previous track");
-	await previousTrack();
-};
-
-const onMainPlayerSwipeUp = async () => {
-	if (isSwipeDebounced()) {
-		return;
-	}
-	console.log("Swiped up on main player, opening mobile player");
-	await tap();
-	showMobilePlayer.value = true;
-};
-
-// Mobile player drag handlers for visual feedback
-const onMobilePlayerDragging = (e: TouchEvent) => {
-	if (!e.touches || 0 === e.touches.length) {
-		return;
-	}
-
-	const touch = e.touches[0];
-	if (!touch) {
-		return;
-	}
-
-	const currentY = touch.clientY;
-	const currentX = touch.clientX;
-
-	// Initialize drag start position on first drag event
-	if (!isDraggingMobilePlayer.value) {
-		isDraggingMobilePlayer.value = true;
-		dragStartY.value = currentY;
-		dragStartX.value = currentX;
-		mobilePlayerDragOffsetY.value = 0;
-		mobilePlayerDragOffsetX.value = 0;
-		mobilePlayerDragOpacity.value = 1;
-		return;
-	}
-
-	// Calculate offset from start position
-	const deltaY = currentY - dragStartY.value;
-	const deltaX = currentX - dragStartX.value;
-
-	// Threshold before animation starts
-	const dragThresholdStart = 100;
-	const adjustedDeltaY = Math.max(0, deltaY - dragThresholdStart);
-
-	// Update offsets for animation (only after threshold)
-	mobilePlayerDragOffsetY.value = adjustedDeltaY;
-	mobilePlayerDragOffsetX.value = deltaX;
-
-	// Calculate opacity based on vertical drag (fade out as user drags down)
-	const maxDragY = 200; // pixels needed to fully fade out
-	const opacityFade = Math.max(0, 1 - Math.abs(adjustedDeltaY) / maxDragY);
-	mobilePlayerDragOpacity.value = opacityFade;
-};
-
-// Mini player drag handlers for visual feedback
-const onMiniPlayerDragging = (e: TouchEvent) => {
-	if (!e.touches || 0 === e.touches.length) {
-		return;
-	}
-
-	const touch = e.touches[0];
-	if (!touch) {
-		return;
-	}
-
-	const currentY = touch.clientY;
-
-	// Initialize drag start position on first drag event
-	if (!isDraggingMiniPlayer.value) {
-		isDraggingMiniPlayer.value = true;
-		miniPlayerDragStartY.value = currentY;
-		miniPlayerDragOffsetY.value = 0;
-		return;
-	}
-
-	// Calculate offset from start position (negative = dragging up)
-	const deltaY = currentY - miniPlayerDragStartY.value;
-
-	// Only allow upward drag (negative delta)
-	miniPlayerDragOffsetY.value = deltaY < 0 ? Math.abs(deltaY) : 0;
-};
-
-const onMiniPlayerDragEnd = async () => {
-	const dragThreshold = 50; // pixels needed to trigger action
-
-	if (miniPlayerDragOffsetY.value > dragThreshold) {
-		// User dragged up enough to open fullscreen player
-		await tap();
-		showMobilePlayer.value = true;
-	}
-
-	// Reset drag state with animation
-	miniPlayerDragOffsetY.value = 0;
-	isDraggingMiniPlayer.value = false;
-};
-
-const onMobilePlayerDragEnd = async () => {
-	const dragThreshold = 100; // pixels needed to trigger action
-
-	if (mobilePlayerDragOffsetY.value > dragThreshold) {
-		// User dragged down enough to close player
-		await heavyTap();
-		showMobilePlayer.value = false;
-	}
-
-	// Reset drag state with animation
-	mobilePlayerDragOffsetY.value = 0;
-	mobilePlayerDragOffsetX.value = 0;
-	mobilePlayerDragOpacity.value = 1;
-	isDraggingMobilePlayer.value = false;
+	mobilePlayer.closeMenu();
 };
 
 const closePlaylistDropdown = () => {
@@ -773,8 +596,7 @@ const formatTime = (seconds: number) => {
 };
 
 const toggleMobilePlayer = async () => {
-	await tap();
-	showMobilePlayer.value = !showMobilePlayer.value;
+	await mobilePlayer.toggle();
 };
 
 const toggleVisualizerOverlay = () => {
@@ -880,13 +702,13 @@ onMounted(async () => {
 			showVisualizerOverlay.value = !showVisualizerOverlay.value;
 		},
 		onEscapeFullscreen: () => {
-			showMobilePlayer.value = false;
+			mobilePlayer.close();
 		},
 		onEscapeVisualizer: () => {
 			showVisualizerOverlay.value = false;
 		},
 		onFocusSearch: focusSearch,
-		isFullscreenActive: () => showMobilePlayer.value,
+		isFullscreenActive: () => mobilePlayer.state.showFullscreen,
 		isVisualizerActive: () => showVisualizerOverlay.value,
 		isSearchFocused: () => isSearchFocused.value
 	});
@@ -899,9 +721,12 @@ onMounted(async () => {
 
 	// Watch for theme changes
 	// iOS theme-color: directly update DOM meta tag for reliable Safari support
-	watch(showMobilePlayer, (open) => {
-		backgroundColor.value = open ? BACKGROUND_COLOR_MOBILE_PLAYER : BACKGROUND_COLOR_DEFAULT;
-	});
+	watch(
+		() => mobilePlayer.state.showFullscreen,
+		(open) => {
+			backgroundColor.value = open ? BACKGROUND_COLOR_MOBILE_PLAYER : BACKGROUND_COLOR_DEFAULT;
+		}
+	);
 
 	watch(backgroundColor, (val) => {
 		updateThemeColor(val);
@@ -930,16 +755,6 @@ onMounted(async () => {
 	watch(remoteSyncResult.enabled, (val) => {
 		remoteSyncEnabled.value = val;
 	});
-
-	// Close mobile fullscreen player when track ends
-	watch(
-		() => appState.CurrentTrack,
-		(track) => {
-			if (!track) {
-				showMobilePlayer.value = false;
-			}
-		}
-	);
 
 	// Restore remote-controlled session name from localStorage
 	if (appState.RemoteControl) {
@@ -1403,11 +1218,15 @@ onBeforeUnmount(() => {
 		</template>
 
 		<!-- Regular Bottom Player -->
-		<div v-else-if="appState.CurrentTrack && !showMobilePlayer" data-testid="audio-player" class="audio-player">
+		<div
+			v-else-if="appState.CurrentTrack && !mobilePlayer.state.showFullscreen"
+			data-testid="audio-player"
+			class="audio-player"
+		>
 			<div
-				v-touch:swipe.left="onMainPlayerSwipeLeft"
-				v-touch:swipe.right="onMainPlayerSwipeRight"
-				v-touch:swipe.up="onMainPlayerSwipeUp"
+				v-touch:swipe.left="mobilePlayer.onMiniPlayerSwipeLeft"
+				v-touch:swipe.right="mobilePlayer.onMiniPlayerSwipeRight"
+				v-touch:swipe.up="mobilePlayer.onMiniPlayerSwipeUp"
 				class="audio-player-controls"
 			>
 				<div class="audio-player-left">
@@ -1557,20 +1376,20 @@ onBeforeUnmount(() => {
 
 		<!-- Mobile Mini Player Bar -->
 		<div
-			v-if="appState.CurrentTrack && !showMobilePlayer && (serverConnected || !isNativeOrElectron)"
-			v-touch:swipe.left="onMainPlayerSwipeLeft"
-			v-touch:swipe.right="onMainPlayerSwipeRight"
-			v-touch:swipe.up="onMainPlayerSwipeUp"
+			v-if="appState.CurrentTrack && !mobilePlayer.state.showFullscreen && (serverConnected || !isNativeOrElectron)"
+			v-touch:swipe.left="mobilePlayer.onMiniPlayerSwipeLeft"
+			v-touch:swipe.right="mobilePlayer.onMiniPlayerSwipeRight"
+			v-touch:swipe.up="mobilePlayer.onMiniPlayerSwipeUp"
 			data-testid="mobile-mini-player"
 			class="mobile-mini-player"
 			:style="{
-				transform: `translateY(${-miniPlayerDragOffsetY}px)`,
-				transition: isDraggingMiniPlayer ? 'none' : 'all 0.3s ease-out'
+				transform: `translateY(${-mobilePlayer.state.miniPlayerDrag.offsetY}px)`,
+				transition: mobilePlayer.state.miniPlayerDrag.isDragging ? 'none' : 'all 0.3s ease-out'
 			}"
-			@click="showMobilePlayer = true"
-			@touchstart="onMiniPlayerDragging"
-			@touchmove="onMiniPlayerDragging"
-			@touchend="onMiniPlayerDragEnd"
+			@click="mobilePlayer.open()"
+			@touchstart="mobilePlayer.onMiniPlayerDragging"
+			@touchmove="mobilePlayer.onMiniPlayerDragging"
+			@touchend="mobilePlayer.onMiniPlayerDragEnd"
 		>
 			<div class="mobile-mini-progress" :style="{ width: seekPosition + '%' }"></div>
 			<figure class="mobile-mini-cover">
@@ -1595,24 +1414,21 @@ onBeforeUnmount(() => {
 		<!-- Mobile Full-Screen Player -->
 		<transition name="mobile-player-slide">
 			<div
-				v-if="showMobilePlayer && appState.CurrentTrack && (serverConnected || !isNativeOrElectron)"
-				v-touch:swipe.down="onMobilePlayerSwipeDown"
-				v-touch:swipe.left="onMobilePlayerSwipeLeft"
-				v-touch:swipe.right="onMobilePlayerSwipeRight"
-				v-touch:drag="onMobilePlayerDragging"
+				v-if="mobilePlayer.shouldShowFullscreen && appState.CurrentTrack && (serverConnected || !isNativeOrElectron)"
+				v-touch:swipe.down="mobilePlayer.onFullscreenSwipeDown"
+				v-touch:swipe.left="mobilePlayer.onFullscreenSwipeLeft"
+				v-touch:swipe.right="mobilePlayer.onFullscreenSwipeRight"
+				v-touch:drag="mobilePlayer.onFullscreenDragging"
 				data-testid="mobile-player"
 				class="mobile-fullscreen-player"
-				:style="{
-					transform: `translateY(${mobilePlayerDragOffsetY}px)`,
-					transition: isDraggingMobilePlayer ? 'none' : 'all 0.3s ease-out'
-				}"
-				@touchend="onMobilePlayerDragEnd"
+				:style="mobilePlayer.fullscreenStyle"
+				@touchend="mobilePlayer.onFullscreenDragEnd"
 			>
 				<div class="mobile-player-header">
 					<button
 						data-testid="mobile-player-collapse"
 						class="mobile-player-collapse"
-						@click="showMobilePlayer = false"
+						@click="mobilePlayer.close()"
 					>
 						<font-awesome-icon icon="fa-chevron-down" />
 					</button>
@@ -1621,17 +1437,17 @@ onBeforeUnmount(() => {
 						<button
 							data-testid="mobile-player-menu-btn"
 							class="mobile-player-collapse"
-							@click.stop="showMobilePlayerMenu = !showMobilePlayerMenu"
+							@click.stop="mobilePlayer.state.showMenu = !mobilePlayer.state.showMenu"
 						>
 							<font-awesome-icon icon="fa-ellipsis-vertical" />
 						</button>
-						<div v-if="showMobilePlayerMenu" class="mobile-player-menu" @click="showMobilePlayerMenu = false">
+						<div v-if="mobilePlayer.state.showMenu" class="mobile-player-menu" @click="mobilePlayer.closeMenu()">
 							<button
 								data-testid="mobile-player-go-artist"
 								class="mobile-player-menu-item"
 								@click="
 									navigateToCurrentArtist();
-									showMobilePlayer = false;
+									mobilePlayer.close();
 								"
 							>
 								<font-awesome-icon icon="fa-user" class="mr-2" />
@@ -1642,7 +1458,7 @@ onBeforeUnmount(() => {
 								class="mobile-player-menu-item"
 								@click="
 									navigateToCurrentAlbum();
-									showMobilePlayer = false;
+									mobilePlayer.close();
 								"
 							>
 								<font-awesome-icon icon="fa-folder" class="mr-2" />
@@ -1653,7 +1469,7 @@ onBeforeUnmount(() => {
 								class="mobile-player-menu-item"
 								@click="
 									router.push(`/playlists/${appState.CurrentPlaylist?.id}`);
-									showMobilePlayer = false;
+									mobilePlayer.close();
 								"
 							>
 								<font-awesome-icon icon="fa-list" class="mr-2" />
@@ -1666,19 +1482,49 @@ onBeforeUnmount(() => {
 					data-testid="mobile-player-cover"
 					class="mobile-player-cover"
 					:style="{
-						transform: `translateX(${mobilePlayerDragOffsetX * 0.15}px)`,
-						transition: isDraggingMobilePlayer ? 'none' : 'transform 0.3s ease-out'
+						transform: `translateX(${mobilePlayer.state.fullscreenDrag.offsetX * 0.15}px)`,
+						transition: mobilePlayer.state.fullscreenDrag.isDragging ? 'none' : 'transform 0.3s ease-out'
 					}"
 				>
-					<img
-						v-if="appState.CurrentTrack.cover_art_id"
-						:src="getImageUrl(`/api/cover-art/${appState.CurrentTrack.cover_art_id}`)"
-						:alt="`${appState.CurrentTrack.album} cover`"
-						data-testid="mobile-player-cover-image"
-						class="mobile-player-cover-image"
-					/>
-					<div v-else class="mobile-player-cover-placeholder">
-						<font-awesome-icon icon="fa-music" />
+					<!-- Exiting art (old track, flies off screen) -->
+					<div
+						v-if="
+							mobilePlayer.state.albumArtAnimation.phase !== 'idle' &&
+							mobilePlayer.state.albumArtAnimation.exitingCoverArtUrl
+						"
+						class="album-art-layer album-art-exiting"
+						:class="{
+							'fly-out-left': mobilePlayer.state.albumArtAnimation.direction === 'left',
+							'fly-out-right': mobilePlayer.state.albumArtAnimation.direction === 'right'
+						}"
+					>
+						<img
+							:src="mobilePlayer.state.albumArtAnimation.exitingCoverArtUrl"
+							class="mobile-player-cover-image"
+						/>
+					</div>
+					<!-- Current art (new track, flies in) -->
+					<div
+						class="album-art-layer"
+						:class="{
+							'fly-in-from-right':
+								mobilePlayer.state.albumArtAnimation.phase === 'enter' &&
+								mobilePlayer.state.albumArtAnimation.direction === 'left',
+							'fly-in-from-left':
+								mobilePlayer.state.albumArtAnimation.phase === 'enter' &&
+								mobilePlayer.state.albumArtAnimation.direction === 'right'
+						}"
+					>
+						<img
+							v-if="appState.CurrentTrack.cover_art_id"
+							:src="getImageUrl(`/api/cover-art/${appState.CurrentTrack.cover_art_id}`)"
+							:alt="`${appState.CurrentTrack.album} cover`"
+							data-testid="mobile-player-cover-image"
+							class="mobile-player-cover-image"
+						/>
+						<div v-else class="mobile-player-cover-placeholder">
+							<font-awesome-icon icon="fa-music" />
+						</div>
 					</div>
 				</div>
 				<div class="mobile-player-info">
@@ -1688,7 +1534,7 @@ onBeforeUnmount(() => {
 							class="clickable-artist"
 							@click="
 								navigateToCurrentArtist();
-								showMobilePlayer = false;
+								mobilePlayer.close();
 							"
 							>{{ appState.CurrentTrack.artist }}</span
 						>
@@ -1697,7 +1543,7 @@ onBeforeUnmount(() => {
 							class="clickable-artist"
 							@click="
 								navigateToCurrentAlbum();
-								showMobilePlayer = false;
+								mobilePlayer.close();
 							"
 							>{{ appState.CurrentTrack.album }}</span
 						>
@@ -2266,6 +2112,88 @@ onBeforeUnmount(() => {
 	justify-content: center;
 	padding: 0.5rem 1.5rem;
 	min-height: 0;
+	position: relative;
+	overflow: hidden;
+}
+
+/* Album art animation layers */
+.album-art-layer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.album-art-layer:only-child {
+	position: relative;
+}
+
+.album-art-exiting {
+	z-index: 2;
+}
+
+.fly-out-left {
+	animation: flyOutLeft 300ms ease-in forwards;
+}
+
+.fly-out-right {
+	animation: flyOutRight 300ms ease-in forwards;
+}
+
+.fly-in-from-right {
+	animation: flyInFromRight 300ms ease-out forwards;
+}
+
+.fly-in-from-left {
+	animation: flyInFromLeft 300ms ease-out forwards;
+}
+
+@keyframes flyOutLeft {
+	from {
+		transform: translateX(0);
+		opacity: 1;
+	}
+	to {
+		transform: translateX(-120%);
+		opacity: 0;
+	}
+}
+
+@keyframes flyOutRight {
+	from {
+		transform: translateX(0);
+		opacity: 1;
+	}
+	to {
+		transform: translateX(120%);
+		opacity: 0;
+	}
+}
+
+@keyframes flyInFromRight {
+	from {
+		transform: translateX(120%);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
+
+@keyframes flyInFromLeft {
+	from {
+		transform: translateX(-120%);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
 }
 
 .mobile-player-cover-image {
