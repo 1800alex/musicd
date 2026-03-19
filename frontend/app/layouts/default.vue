@@ -1230,10 +1230,9 @@ onBeforeUnmount(() => {
 			<div
 				v-touch:swipe.left="mobilePlayer.onMiniPlayerSwipeLeft"
 				v-touch:swipe.right="mobilePlayer.onMiniPlayerSwipeRight"
+				v-touch:drag="mobilePlayer.onMiniPlayerDragging"
+				v-touch:release="mobilePlayer.onMiniPlayerDragEnd"
 				class="audio-player-controls"
-				@touchstart="mobilePlayer.onMiniPlayerDragging"
-				@touchmove="mobilePlayer.onMiniPlayerDragging"
-				@touchend="mobilePlayer.onMiniPlayerDragEnd"
 			>
 				<div class="audio-player-left">
 					<div class="level-item">
@@ -1385,6 +1384,8 @@ onBeforeUnmount(() => {
 			v-if="appState.CurrentTrack && !mobilePlayer.state.showFullscreen && (serverConnected || !isNativeOrElectron)"
 			v-touch:swipe.left="mobilePlayer.onMiniPlayerSwipeLeft"
 			v-touch:swipe.right="mobilePlayer.onMiniPlayerSwipeRight"
+			v-touch:drag="mobilePlayer.onMiniPlayerDragging"
+			v-touch:release="mobilePlayer.onMiniPlayerDragEnd"
 			data-testid="mobile-mini-player"
 			class="mobile-mini-player"
 			:style="{
@@ -1392,9 +1393,6 @@ onBeforeUnmount(() => {
 				transition: mobilePlayer.state.miniPlayerDrag.isDragging ? 'none' : 'all 0.3s ease-out'
 			}"
 			@click="mobilePlayer.open()"
-			@touchstart="mobilePlayer.onMiniPlayerDragging"
-			@touchmove="mobilePlayer.onMiniPlayerDragging"
-			@touchend="mobilePlayer.onMiniPlayerDragEnd"
 		>
 			<div class="mobile-mini-progress" :style="{ width: seekPosition + '%' }"></div>
 			<figure class="mobile-mini-cover">
@@ -1423,10 +1421,10 @@ onBeforeUnmount(() => {
 				v-touch:swipe.left="mobilePlayer.onFullscreenSwipeLeft"
 				v-touch:swipe.right="mobilePlayer.onFullscreenSwipeRight"
 				v-touch:drag="mobilePlayer.onFullscreenDragging"
+				v-touch:release="mobilePlayer.onFullscreenDragEnd"
 				data-testid="mobile-player"
 				class="mobile-fullscreen-player"
 				:style="mobilePlayer.fullscreenStyle"
-				@touchend="mobilePlayer.onFullscreenDragEnd"
 			>
 				<div class="mobile-player-header">
 					<button

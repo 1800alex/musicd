@@ -225,7 +225,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 			state.fullscreenDrag.lockedAxis = Math.abs(deltaY) >= Math.abs(deltaX) ? "vertical" : "horizontal";
 		}
 
-		if (state.fullscreenDrag.lockedAxis === "vertical") {
+		if ("vertical" === state.fullscreenDrag.lockedAxis) {
 			// Vertical drag — close gesture
 			const dragThresholdStart = 100;
 			const adjustedDeltaY = Math.max(0, deltaY - dragThresholdStart);
