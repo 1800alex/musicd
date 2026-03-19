@@ -1,4 +1,4 @@
-package com.musicplayer.app;
+package com.musicd.player.alex1800;
 
 import android.os.Bundle;
 import android.webkit.WebSettings;
