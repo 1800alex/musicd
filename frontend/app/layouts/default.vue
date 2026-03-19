@@ -81,34 +81,64 @@ const closeMobilePlayerMenu = () => {
 	showMobilePlayerMenu.value = false;
 };
 
-// Touch gesture handlers for vue3-touch-events
+// Touch gesture handlers for vue3-touch-events with debouncing
+let lastSwipeTime = 0;
+const SWIPE_DEBOUNCE_MS = 1000;
+
+const isSwipeDebounced = () => {
+	const now = Date.now();
+	if (now - lastSwipeTime < SWIPE_DEBOUNCE_MS) {
+		return true;
+	}
+	lastSwipeTime = now;
+	return false;
+};
+
 const onMobilePlayerSwipeDown = async () => {
+	if (isSwipeDebounced()) {
+		return;
+	}
 	console.log("Swiped down on mobile player, closing player");
 	await heavyTap();
 	showMobilePlayer.value = false;
 };
 
 const onMobilePlayerSwipeLeft = async () => {
+	if (isSwipeDebounced()) {
+		return;
+	}
 	console.log("Swiped left on mobile player, going to next track");
 	await nextTrack();
 };
 
 const onMobilePlayerSwipeRight = async () => {
+	if (isSwipeDebounced()) {
+		return;
+	}
 	console.log("Swiped right on mobile player, going to previous track");
 	await previousTrack();
 };
 
 const onMainPlayerSwipeLeft = async () => {
+	if (isSwipeDebounced()) {
+		return;
+	}
 	console.log("Swiped left on main player, going to next track");
 	await nextTrack();
 };
 
 const onMainPlayerSwipeRight = async () => {
+	if (isSwipeDebounced()) {
+		return;
+	}
 	console.log("Swiped right on main player, going to previous track");
 	await previousTrack();
 };
 
 const onMainPlayerSwipeUp = async () => {
+	if (isSwipeDebounced()) {
+		return;
+	}
 	console.log("Swiped up on main player, opening mobile player");
 	await tap();
 	showMobilePlayer.value = true;
@@ -1443,9 +1473,9 @@ onBeforeUnmount(() => {
 		<transition name="mobile-player-slide">
 			<div
 				v-if="showMobilePlayer && appState.CurrentTrack && (serverConnected || !isNativeOrElectron)"
-				v-touch:swipe.PlayerServicedown="onMobilePlayerSwipeDown"
-				v-touch:swipe.PlayerServiceleft="onMobilePlayerSwipeLeft"
-				v-touch:swipe.PlayerServiceright="onMobilePlayerSwipeRight"
+				v-touch:swipe.down="onMobilePlayerSwipeDown"
+				v-touch:swipe.left="onMobilePlayerSwipeLeft"
+				v-touch:swipe.right="onMobilePlayerSwipeRight"
 				data-testid="mobile-player"
 				class="mobile-fullscreen-player"
 			>
