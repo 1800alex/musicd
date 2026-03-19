@@ -1228,8 +1228,6 @@ onBeforeUnmount(() => {
 			}"
 		>
 			<div
-				v-touch:swipe.left="mobilePlayer.onMiniPlayerSwipeLeft"
-				v-touch:swipe.right="mobilePlayer.onMiniPlayerSwipeRight"
 				v-touch:drag="mobilePlayer.onMiniPlayerDragging"
 				v-touch:release="mobilePlayer.onMiniPlayerDragEnd"
 				class="audio-player-controls"
@@ -1353,6 +1351,13 @@ onBeforeUnmount(() => {
 				<div class="progress-bar-container">
 					<input
 						v-model="seekPosition"
+						v-touch:drag="
+							() => {
+								seeking = true;
+								stopSmoothProgressAnimation();
+							}
+						"
+						v-touch:release="seekToPosition"
 						data-testid="player-progress-bar"
 						type="range"
 						min="0"
@@ -1365,11 +1370,6 @@ onBeforeUnmount(() => {
 							stopSmoothProgressAnimation();
 						"
 						@mouseup="seekToPosition()"
-						@touchstart="
-							seeking = true;
-							stopSmoothProgressAnimation();
-						"
-						@touchend="seekToPosition()"
 					/>
 					<div class="time-info">
 						<span data-testid="player-current-time" class="has-text-white">{{ formatTime(currentTime) }}</span>
@@ -1382,8 +1382,6 @@ onBeforeUnmount(() => {
 		<!-- Mobile Mini Player Bar -->
 		<div
 			v-if="appState.CurrentTrack && !mobilePlayer.state.showFullscreen && (serverConnected || !isNativeOrElectron)"
-			v-touch:swipe.left="mobilePlayer.onMiniPlayerSwipeLeft"
-			v-touch:swipe.right="mobilePlayer.onMiniPlayerSwipeRight"
 			v-touch:drag="mobilePlayer.onMiniPlayerDragging"
 			v-touch:release="mobilePlayer.onMiniPlayerDragEnd"
 			data-testid="mobile-mini-player"
@@ -1552,6 +1550,13 @@ onBeforeUnmount(() => {
 				<div class="mobile-player-seek">
 					<input
 						v-model="seekPosition"
+						v-touch:drag="
+							() => {
+								seeking = true;
+								stopSmoothProgressAnimation();
+							}
+						"
+						v-touch:release="seekToPosition"
 						type="range"
 						min="0"
 						max="100"
@@ -1564,11 +1569,6 @@ onBeforeUnmount(() => {
 							stopSmoothProgressAnimation();
 						"
 						@mouseup="seekToPosition()"
-						@touchstart="
-							seeking = true;
-							stopSmoothProgressAnimation();
-						"
-						@touchend="seekToPosition()"
 					/>
 					<div class="mobile-player-times">
 						<span>{{ formatTime(currentTime) }}</span>

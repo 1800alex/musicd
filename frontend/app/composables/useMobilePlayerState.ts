@@ -28,9 +28,12 @@ export interface FullscreenPlayerDragState {
 
 export interface MiniPlayerDragState {
 	isDragging: boolean;
+	lockedAxis: DragAxis;
 	startY: number;
+	startX: number;
 	startTime: number;
 	offsetY: number;
+	offsetX: number;
 }
 
 export interface MobilePlayerUIState {
@@ -73,9 +76,12 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 		},
 		miniPlayerDrag: {
 			isDragging: false,
+			lockedAxis: null,
 			startY: 0,
+			startX: 0,
 			startTime: 0,
-			offsetY: 0
+			offsetY: 0,
+			offsetX: 0
 		},
 		albumArtAnimation: {
 			phase: "idle",
@@ -187,8 +193,13 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 
 	// --- Fullscreen player drag handlers ---
 
+	function isRangeInput(e: TouchEvent): boolean {
+		const target = e.target as HTMLElement | null;
+		return "INPUT" === target?.tagName && "range" === (target as HTMLInputElement).type;
+	}
+
 	function onFullscreenDragging(e: TouchEvent): void {
-		if (!e.touches || 0 === e.touches.length) {
+		if (!e.touches || 0 === e.touches.length || isRangeInput(e)) {
 			return;
 		}
 
@@ -282,7 +293,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 	// --- Mini player drag handlers ---
 
 	function onMiniPlayerDragging(e: TouchEvent): void {
-		if (!e.touches || 0 === e.touches.length) {
+		if (!e.touches || 0 === e.touches.length || isRangeInput(e)) {
 			return;
 		}
 
@@ -292,33 +303,73 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 		}
 
 		const currentY = touch.clientY;
+		const currentX = touch.clientX;
 
 		if (!state.miniPlayerDrag.isDragging) {
 			state.miniPlayerDrag.isDragging = true;
+			state.miniPlayerDrag.lockedAxis = null;
 			state.miniPlayerDrag.startY = currentY;
+			state.miniPlayerDrag.startX = currentX;
 			state.miniPlayerDrag.startTime = Date.now();
 			state.miniPlayerDrag.offsetY = 0;
+			state.miniPlayerDrag.offsetX = 0;
 			return;
 		}
 
 		const deltaY = currentY - state.miniPlayerDrag.startY;
-		// Only allow upward drag (negative delta)
-		state.miniPlayerDrag.offsetY = deltaY < 0 ? Math.abs(deltaY) : 0;
+		const deltaX = currentX - state.miniPlayerDrag.startX;
+
+		// Lock axis once the user moves past a small threshold
+		const AXIS_LOCK_THRESHOLD = 10;
+		if (!state.miniPlayerDrag.lockedAxis) {
+			if (Math.abs(deltaY) < AXIS_LOCK_THRESHOLD && Math.abs(deltaX) < AXIS_LOCK_THRESHOLD) {
+				return;
+			}
+			state.miniPlayerDrag.lockedAxis = Math.abs(deltaY) >= Math.abs(deltaX) ? "vertical" : "horizontal";
+		}
+
+		if (state.miniPlayerDrag.lockedAxis === "vertical") {
+			// Only allow upward drag (negative delta)
+			state.miniPlayerDrag.offsetY = deltaY < 0 ? Math.abs(deltaY) : 0;
+			state.miniPlayerDrag.offsetX = 0;
+		} else {
+			state.miniPlayerDrag.offsetX = deltaX;
+			state.miniPlayerDrag.offsetY = 0;
+		}
 	}
 
 	async function onMiniPlayerDragEnd(): Promise<void> {
 		const elapsed = Date.now() - state.miniPlayerDrag.startTime;
-		const velocity = elapsed > 0 ? state.miniPlayerDrag.offsetY / elapsed : 0;
-		const screenPercent = state.miniPlayerDrag.offsetY / window.innerHeight;
+		const axis = state.miniPlayerDrag.lockedAxis;
 
-		const shouldCommit = velocity > VELOCITY_THRESHOLD || screenPercent > SCREEN_PERCENT_THRESHOLD;
+		if ("vertical" === axis) {
+			const velocity = elapsed > 0 ? state.miniPlayerDrag.offsetY / elapsed : 0;
+			const screenPercent = state.miniPlayerDrag.offsetY / window.innerHeight;
+			const shouldCommit = velocity > VELOCITY_THRESHOLD || screenPercent > SCREEN_PERCENT_THRESHOLD;
 
-		if (shouldCommit && state.miniPlayerDrag.offsetY > 0) {
-			await tap();
-			state.showFullscreen = true;
+			if (shouldCommit && state.miniPlayerDrag.offsetY > 0) {
+				await tap();
+				state.showFullscreen = true;
+			}
+		} else if ("horizontal" === axis) {
+			const absX = Math.abs(state.miniPlayerDrag.offsetX);
+			const velocity = elapsed > 0 ? absX / elapsed : 0;
+			const screenPercent = absX / window.innerWidth;
+			const shouldCommit = velocity > VELOCITY_THRESHOLD || screenPercent > SCREEN_PERCENT_THRESHOLD;
+
+			if (shouldCommit && absX > 0) {
+				await selectionChanged();
+				if (0 > state.miniPlayerDrag.offsetX) {
+					playerRef.value?.NextTrack();
+				} else {
+					playerRef.value?.PreviousTrack();
+				}
+			}
 		}
 
 		state.miniPlayerDrag.offsetY = 0;
+		state.miniPlayerDrag.offsetX = 0;
+		state.miniPlayerDrag.lockedAxis = null;
 		state.miniPlayerDrag.isDragging = false;
 	}
 
