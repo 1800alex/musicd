@@ -62,6 +62,11 @@ const isDraggingMobilePlayer = ref(false);
 const dragStartY = ref(0);
 const dragStartX = ref(0);
 
+// Mini player drag state for visual feedback
+const miniPlayerDragOffsetY = ref(0);
+const isDraggingMiniPlayer = ref(false);
+const miniPlayerDragStartY = ref(0);
+
 // Server connectivity and remote server URL config (native/electron only)
 const serverURL = ref(localStorage.getItem("backendURL") || "");
 const editingServerURL = ref(false);
@@ -189,6 +194,48 @@ const onMobilePlayerDragging = (e: TouchEvent) => {
 	const maxDragY = 200; // pixels needed to fully fade out
 	const opacityFade = Math.max(0, 1 - Math.abs(deltaY) / maxDragY);
 	mobilePlayerDragOpacity.value = opacityFade;
+};
+
+// Mini player drag handlers for visual feedback
+const onMiniPlayerDragging = (e: TouchEvent) => {
+	if (!e.touches || 0 === e.touches.length) {
+		return;
+	}
+
+	const touch = e.touches[0];
+	if (!touch) {
+		return;
+	}
+
+	const currentY = touch.clientY;
+
+	// Initialize drag start position on first drag event
+	if (!isDraggingMiniPlayer.value) {
+		isDraggingMiniPlayer.value = true;
+		miniPlayerDragStartY.value = currentY;
+		miniPlayerDragOffsetY.value = 0;
+		return;
+	}
+
+	// Calculate offset from start position (negative = dragging up)
+	const deltaY = currentY - miniPlayerDragStartY.value;
+
+	// Only allow upward drag (negative delta)
+	miniPlayerDragOffsetY.value = deltaY < 0 ? Math.abs(deltaY) : 0;
+};
+
+const onMiniPlayerDragEnd = async () => {
+	const dragThreshold = 50; // pixels needed to trigger action
+
+	if (miniPlayerDragOffsetY.value > dragThreshold) {
+		// User dragged up enough to open fullscreen player
+		await tap();
+		showMobilePlayer.value = true;
+	}
+
+	// Reset drag state with animation
+	miniPlayerDragOffsetY.value = 0;
+	isDraggingMiniPlayer.value = false;
 };
 
 const onMobilePlayerDragEnd = async () => {
@@ -1350,6 +1397,8 @@ onBeforeUnmount(() => {
 				<span class="ml-3 is-size-7 has-text-grey">Reconnecting...</span>
 			</div>
 		</template>
+
+		<!-- Regular Bottom Player -->
 		<div v-else-if="appState.CurrentTrack && !showMobilePlayer" data-testid="audio-player" class="audio-player">
 			<div
 				v-touch:swipe.left="onMainPlayerSwipeLeft"
@@ -1510,7 +1559,14 @@ onBeforeUnmount(() => {
 			v-touch:swipe.up="onMainPlayerSwipeUp"
 			data-testid="mobile-mini-player"
 			class="mobile-mini-player"
+			:style="{
+				transform: `translateY(${-miniPlayerDragOffsetY}px)`,
+				transition: isDraggingMiniPlayer ? 'none' : 'all 0.3s ease-out'
+			}"
 			@click="showMobilePlayer = true"
+			@touchstart="onMiniPlayerDragging"
+			@touchmove="onMiniPlayerDragging"
+			@touchend="onMiniPlayerDragEnd"
 		>
 			<div class="mobile-mini-progress" :style="{ width: seekPosition + '%' }"></div>
 			<figure class="mobile-mini-cover">
@@ -2030,6 +2086,7 @@ onBeforeUnmount(() => {
 	z-index: 20;
 	cursor: pointer;
 	user-select: none;
+	touch-action: none;
 }
 
 .mobile-mini-progress {
@@ -2123,6 +2180,7 @@ onBeforeUnmount(() => {
 	padding: 0 1rem;
 	padding-bottom: env(safe-area-inset-bottom, 1rem);
 	overflow-y: auto;
+	touch-action: none;
 }
 
 .mobile-player-header {
