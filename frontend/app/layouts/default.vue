@@ -1222,12 +1222,19 @@ onBeforeUnmount(() => {
 			v-else-if="appState.CurrentTrack && !mobilePlayer.state.showFullscreen"
 			data-testid="audio-player"
 			class="audio-player"
+			:style="{
+				transform: `translateY(${-mobilePlayer.state.miniPlayerDrag.offsetY}px)`,
+				transition: mobilePlayer.state.miniPlayerDrag.isDragging ? 'none' : 'all 0.3s ease-out'
+			}"
 		>
 			<div
 				v-touch:swipe.left="mobilePlayer.onMiniPlayerSwipeLeft"
 				v-touch:swipe.right="mobilePlayer.onMiniPlayerSwipeRight"
 				v-touch:swipe.up="mobilePlayer.onMiniPlayerSwipeUp"
 				class="audio-player-controls"
+				@touchstart="mobilePlayer.onMiniPlayerDragging"
+				@touchmove="mobilePlayer.onMiniPlayerDragging"
+				@touchend="mobilePlayer.onMiniPlayerDragEnd"
 			>
 				<div class="audio-player-left">
 					<div class="level-item">
@@ -1415,7 +1422,6 @@ onBeforeUnmount(() => {
 		<transition name="mobile-player-slide">
 			<div
 				v-if="mobilePlayer.shouldShowFullscreen && appState.CurrentTrack && (serverConnected || !isNativeOrElectron)"
-				v-touch:swipe.down="mobilePlayer.onFullscreenSwipeDown"
 				v-touch:swipe.left="mobilePlayer.onFullscreenSwipeLeft"
 				v-touch:swipe.right="mobilePlayer.onFullscreenSwipeRight"
 				v-touch:drag="mobilePlayer.onFullscreenDragging"

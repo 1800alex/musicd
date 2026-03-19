@@ -17,6 +17,7 @@ export interface FullscreenPlayerDragState {
 	isDragging: boolean;
 	startY: number;
 	startX: number;
+	startTime: number;
 	offsetY: number;
 	offsetX: number;
 	opacity: number;
@@ -25,6 +26,7 @@ export interface FullscreenPlayerDragState {
 export interface MiniPlayerDragState {
 	isDragging: boolean;
 	startY: number;
+	startTime: number;
 	offsetY: number;
 }
 
@@ -49,6 +51,10 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 	let animationInProgress = false;
 	const ART_ANIMATION_DURATION_MS = 300;
 
+	// Drag commit thresholds
+	const SCREEN_PERCENT_THRESHOLD = 0.3; // 30% of screen height for slow drags
+	const VELOCITY_THRESHOLD = 0.5; // px/ms — fast swipe commits regardless of distance
+
 	const state = reactive<MobilePlayerUIState>({
 		showFullscreen: false,
 		showMenu: false,
@@ -56,6 +62,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 			isDragging: false,
 			startY: 0,
 			startX: 0,
+			startTime: 0,
 			offsetY: 0,
 			offsetX: 0,
 			opacity: 1
@@ -63,6 +70,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 		miniPlayerDrag: {
 			isDragging: false,
 			startY: 0,
+			startTime: 0,
 			offsetY: 0
 		},
 		albumArtAnimation: {
@@ -193,6 +201,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 			state.fullscreenDrag.isDragging = true;
 			state.fullscreenDrag.startY = currentY;
 			state.fullscreenDrag.startX = currentX;
+			state.fullscreenDrag.startTime = Date.now();
 			state.fullscreenDrag.offsetY = 0;
 			state.fullscreenDrag.offsetX = 0;
 			state.fullscreenDrag.opacity = 1;
@@ -216,9 +225,13 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 	}
 
 	async function onFullscreenDragEnd(): Promise<void> {
-		const dragThreshold = 100;
+		const elapsed = Date.now() - state.fullscreenDrag.startTime;
+		const velocity = elapsed > 0 ? state.fullscreenDrag.offsetY / elapsed : 0;
+		const screenPercent = state.fullscreenDrag.offsetY / window.innerHeight;
 
-		if (state.fullscreenDrag.offsetY > dragThreshold) {
+		const shouldCommit = velocity > VELOCITY_THRESHOLD || screenPercent > SCREEN_PERCENT_THRESHOLD;
+
+		if (shouldCommit && state.fullscreenDrag.offsetY > 0) {
 			await heavyTap();
 			state.showFullscreen = false;
 		}
@@ -247,6 +260,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 		if (!state.miniPlayerDrag.isDragging) {
 			state.miniPlayerDrag.isDragging = true;
 			state.miniPlayerDrag.startY = currentY;
+			state.miniPlayerDrag.startTime = Date.now();
 			state.miniPlayerDrag.offsetY = 0;
 			return;
 		}
@@ -257,9 +271,13 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 	}
 
 	async function onMiniPlayerDragEnd(): Promise<void> {
-		const dragThreshold = 50;
+		const elapsed = Date.now() - state.miniPlayerDrag.startTime;
+		const velocity = elapsed > 0 ? state.miniPlayerDrag.offsetY / elapsed : 0;
+		const screenPercent = state.miniPlayerDrag.offsetY / window.innerHeight;
 
-		if (state.miniPlayerDrag.offsetY > dragThreshold) {
+		const shouldCommit = velocity > VELOCITY_THRESHOLD || screenPercent > SCREEN_PERCENT_THRESHOLD;
+
+		if (shouldCommit && state.miniPlayerDrag.offsetY > 0) {
 			await tap();
 			state.showFullscreen = true;
 		}
@@ -310,8 +328,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 		get fullscreenStyle() {
 			const isDraggingUp =
 				state.miniPlayerDrag.isDragging && state.miniPlayerDrag.offsetY > 0 && !state.showFullscreen;
-			const isDragging =
-				state.fullscreenDrag.isDragging || state.miniPlayerDrag.isDragging;
+			const isDragging = state.fullscreenDrag.isDragging || state.miniPlayerDrag.isDragging;
 
 			return {
 				transform: isDraggingUp
