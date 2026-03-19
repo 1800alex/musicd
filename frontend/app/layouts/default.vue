@@ -83,27 +83,33 @@ const closeMobilePlayerMenu = () => {
 
 // Touch gesture handlers for vue3-touch-events
 const onMobilePlayerSwipeDown = async () => {
+	console.log("Swiped down on mobile player, closing player");
 	await heavyTap();
 	showMobilePlayer.value = false;
 };
 
 const onMobilePlayerSwipeLeft = async () => {
+	console.log("Swiped left on mobile player, going to next track");
 	await nextTrack();
 };
 
 const onMobilePlayerSwipeRight = async () => {
+	console.log("Swiped right on mobile player, going to previous track");
 	await previousTrack();
 };
 
 const onMainPlayerSwipeLeft = async () => {
+	console.log("Swiped left on main player, going to next track");
 	await nextTrack();
 };
 
 const onMainPlayerSwipeRight = async () => {
+	console.log("Swiped right on main player, going to previous track");
 	await previousTrack();
 };
 
 const onMainPlayerSwipeUp = async () => {
+	console.log("Swiped up on main player, opening mobile player");
 	await tap();
 	showMobilePlayer.value = true;
 };
@@ -1253,9 +1259,9 @@ onBeforeUnmount(() => {
 		</template>
 		<div v-else-if="appState.CurrentTrack && !showMobilePlayer" data-testid="audio-player" class="audio-player">
 			<div
-				v-touch:left="onMainPlayerSwipeLeft"
-				v-touch:right="onMainPlayerSwipeRight"
-				v-touch:up="onMainPlayerSwipeUp"
+				v-touch:swipe.left="onMainPlayerSwipeLeft"
+				v-touch:swipe.right="onMainPlayerSwipeRight"
+				v-touch:swipe.up="onMainPlayerSwipeUp"
 				class="audio-player-controls"
 			>
 				<div class="audio-player-left">
@@ -1406,6 +1412,9 @@ onBeforeUnmount(() => {
 		<!-- Mobile Mini Player Bar -->
 		<div
 			v-if="appState.CurrentTrack && !showMobilePlayer && (serverConnected || !isNativeOrElectron)"
+			v-touch:swipe.left="onMainPlayerSwipeLeft"
+			v-touch:swipe.right="onMainPlayerSwipeRight"
+			v-touch:swipe.up="onMainPlayerSwipeUp"
 			data-testid="mobile-mini-player"
 			class="mobile-mini-player"
 			@click="showMobilePlayer = true"
@@ -1434,9 +1443,9 @@ onBeforeUnmount(() => {
 		<transition name="mobile-player-slide">
 			<div
 				v-if="showMobilePlayer && appState.CurrentTrack && (serverConnected || !isNativeOrElectron)"
-				v-touch:down="onMobilePlayerSwipeDown"
-				v-touch:left="onMobilePlayerSwipeLeft"
-				v-touch:right="onMobilePlayerSwipeRight"
+				v-touch:swipe.PlayerServicedown="onMobilePlayerSwipeDown"
+				v-touch:swipe.PlayerServiceleft="onMobilePlayerSwipeLeft"
+				v-touch:swipe.PlayerServiceright="onMobilePlayerSwipeRight"
 				data-testid="mobile-player"
 				class="mobile-fullscreen-player"
 			>
