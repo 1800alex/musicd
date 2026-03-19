@@ -13,8 +13,11 @@ export interface AlbumArtAnimationState {
 	exitingCoverArtUrl: string | null;
 }
 
+export type DragAxis = "horizontal" | "vertical" | null;
+
 export interface FullscreenPlayerDragState {
 	isDragging: boolean;
+	lockedAxis: DragAxis;
 	startY: number;
 	startX: number;
 	startTime: number;
@@ -60,6 +63,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 		showMenu: false,
 		fullscreenDrag: {
 			isDragging: false,
+			lockedAxis: null,
 			startY: 0,
 			startX: 0,
 			startTime: 0,
@@ -199,6 +203,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 		// Initialize drag start position on first drag event
 		if (!state.fullscreenDrag.isDragging) {
 			state.fullscreenDrag.isDragging = true;
+			state.fullscreenDrag.lockedAxis = null;
 			state.fullscreenDrag.startY = currentY;
 			state.fullscreenDrag.startX = currentX;
 			state.fullscreenDrag.startTime = Date.now();
@@ -211,17 +216,32 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 		const deltaY = currentY - state.fullscreenDrag.startY;
 		const deltaX = currentX - state.fullscreenDrag.startX;
 
-		// Threshold before animation starts
-		const dragThresholdStart = 100;
-		const adjustedDeltaY = Math.max(0, deltaY - dragThresholdStart);
+		// Lock axis once the user moves past a small threshold
+		const AXIS_LOCK_THRESHOLD = 10;
+		if (!state.fullscreenDrag.lockedAxis) {
+			if (Math.abs(deltaY) < AXIS_LOCK_THRESHOLD && Math.abs(deltaX) < AXIS_LOCK_THRESHOLD) {
+				return; // Not enough movement to determine direction yet
+			}
+			state.fullscreenDrag.lockedAxis = Math.abs(deltaY) >= Math.abs(deltaX) ? "vertical" : "horizontal";
+		}
 
-		state.fullscreenDrag.offsetY = adjustedDeltaY;
-		state.fullscreenDrag.offsetX = deltaX;
+		if (state.fullscreenDrag.lockedAxis === "vertical") {
+			// Vertical drag — close gesture
+			const dragThresholdStart = 100;
+			const adjustedDeltaY = Math.max(0, deltaY - dragThresholdStart);
 
-		// Calculate opacity based on vertical drag
-		const maxDragY = 200;
-		const opacityFade = Math.max(0, 1 - Math.abs(adjustedDeltaY) / maxDragY);
-		state.fullscreenDrag.opacity = opacityFade;
+			state.fullscreenDrag.offsetY = adjustedDeltaY;
+			state.fullscreenDrag.offsetX = 0;
+
+			const maxDragY = 200;
+			const opacityFade = Math.max(0, 1 - Math.abs(adjustedDeltaY) / maxDragY);
+			state.fullscreenDrag.opacity = opacityFade;
+		} else {
+			// Horizontal drag — parallax on album art only
+			state.fullscreenDrag.offsetX = deltaX;
+			state.fullscreenDrag.offsetY = 0;
+			state.fullscreenDrag.opacity = 1;
+		}
 	}
 
 	async function onFullscreenDragEnd(): Promise<void> {
@@ -240,6 +260,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 		state.fullscreenDrag.offsetY = 0;
 		state.fullscreenDrag.offsetX = 0;
 		state.fullscreenDrag.opacity = 1;
+		state.fullscreenDrag.lockedAxis = null;
 		state.fullscreenDrag.isDragging = false;
 	}
 
