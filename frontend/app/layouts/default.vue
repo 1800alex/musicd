@@ -54,6 +54,14 @@ const showRemoteDropdown = ref(false);
 const showPlaylistDropdown = ref(false);
 const backgroundColor = ref(BACKGROUND_COLOR_DEFAULT); // Default background color
 
+// Mobile player drag state for visual feedback
+const mobilePlayerDragOffsetY = ref(0);
+const mobilePlayerDragOffsetX = ref(0);
+const mobilePlayerDragOpacity = ref(1);
+const isDraggingMobilePlayer = ref(false);
+const dragStartY = ref(0);
+const dragStartX = ref(0);
+
 // Server connectivity and remote server URL config (native/electron only)
 const serverURL = ref(localStorage.getItem("backendURL") || "");
 const editingServerURL = ref(false);
@@ -142,6 +150,58 @@ const onMainPlayerSwipeUp = async () => {
 	console.log("Swiped up on main player, opening mobile player");
 	await tap();
 	showMobilePlayer.value = true;
+};
+
+// Mobile player drag handlers for visual feedback
+// Mobile player drag handlers for visual feedback
+const onMobilePlayerDragging = (e: TouchEvent) => {
+	const touch = e.touches[0];
+	if (!touch) {
+		return;
+	}
+
+	const currentY = touch.clientY;
+	const currentX = touch.clientX;
+
+	// Initialize drag start position on first drag event
+	if (!isDraggingMobilePlayer.value) {
+		isDraggingMobilePlayer.value = true;
+		dragStartY.value = currentY;
+		dragStartX.value = currentX;
+		mobilePlayerDragOffsetY.value = 0;
+		mobilePlayerDragOffsetX.value = 0;
+		mobilePlayerDragOpacity.value = 1;
+		return;
+	}
+
+	// Calculate offset from start position
+	const deltaY = currentY - dragStartY.value;
+	const deltaX = currentX - dragStartX.value;
+
+	// Update offsets for animation
+	mobilePlayerDragOffsetY.value = deltaY > 0 ? deltaY : 0; // Only allow downward drag
+	mobilePlayerDragOffsetX.value = deltaX;
+
+	// Calculate opacity based on vertical drag (fade out as user drags down)
+	const maxDragY = 200; // pixels needed to fully fade out
+	const opacityFade = Math.max(0, 1 - Math.abs(deltaY) / maxDragY);
+	mobilePlayerDragOpacity.value = opacityFade;
+};
+
+const onMobilePlayerDragEnd = async () => {
+	const dragThreshold = 100; // pixels needed to trigger action
+
+	if (mobilePlayerDragOffsetY.value > dragThreshold) {
+		// User dragged down enough to close player
+		await heavyTap();
+		showMobilePlayer.value = false;
+	}
+
+	// Reset drag state with animation
+	mobilePlayerDragOffsetY.value = 0;
+	mobilePlayerDragOffsetX.value = 0;
+	mobilePlayerDragOpacity.value = 1;
+	isDraggingMobilePlayer.value = false;
 };
 
 const closePlaylistDropdown = () => {
@@ -1476,8 +1536,15 @@ onBeforeUnmount(() => {
 				v-touch:swipe.down="onMobilePlayerSwipeDown"
 				v-touch:swipe.left="onMobilePlayerSwipeLeft"
 				v-touch:swipe.right="onMobilePlayerSwipeRight"
+				v-touch:drag="onMobilePlayerDragging"
 				data-testid="mobile-player"
 				class="mobile-fullscreen-player"
+				:style="{
+					transform: `translateY(${mobilePlayerDragOffsetY}px) translateX(${mobilePlayerDragOffsetX * 0.1}px)`,
+					opacity: mobilePlayerDragOpacity,
+					transition: isDraggingMobilePlayer ? 'none' : 'all 0.3s ease-out'
+				}"
+				@touchend="onMobilePlayerDragEnd"
 			>
 				<div class="mobile-player-header">
 					<button
@@ -1533,7 +1600,14 @@ onBeforeUnmount(() => {
 						</div>
 					</div>
 				</div>
-				<div data-testid="mobile-player-cover" class="mobile-player-cover">
+				<div
+					data-testid="mobile-player-cover"
+					class="mobile-player-cover"
+					:style="{
+						transform: `translateX(${mobilePlayerDragOffsetX * 0.15}px)`,
+						transition: isDraggingMobilePlayer ? 'none' : 'transform 0.3s ease-out'
+					}"
+				>
 					<img
 						v-if="appState.CurrentTrack.cover_art_id"
 						:src="getImageUrl(`/api/cover-art/${appState.CurrentTrack.cover_art_id}`)"
