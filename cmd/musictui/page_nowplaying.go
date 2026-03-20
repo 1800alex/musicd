@@ -61,18 +61,8 @@ func (p *NowPlayingPage) setupKeys() {
 	})
 }
 
-// Load refreshes the now-playing display from the current state.
-func (p *NowPlayingPage) Load() {
-	state := p.app.GetState()
-	if state == nil || state.CurrentTrack == nil {
-		p.trackInfo.SetText("\n  [gray]No track playing[-]")
-		p.coverImage.SetImage(nil)
-		p.mu.Lock()
-		p.lastArtID = ""
-		p.mu.Unlock()
-		return
-	}
-
+// buildInfoText builds the track info text from state and interpolated progress.
+func (p *NowPlayingPage) buildInfoText(state *PlayerState) string {
 	t := state.CurrentTrack
 	title := t.Title
 	if title == "" {
@@ -89,9 +79,8 @@ func (p *NowPlayingPage) Load() {
 	if t.Year > 0 {
 		info += fmt.Sprintf(" [gray](%d)[-]", t.Year)
 	}
-	// Use interpolated progress for smooth time display
-	currentTime, duration := p.app.GetInterpolatedProgress()
 
+	currentTime, duration := p.app.GetInterpolatedProgress()
 	info += fmt.Sprintf("\n\n  %s  %s / %s",
 		playState,
 		formatDuration(currentTime),
@@ -110,10 +99,35 @@ func (p *NowPlayingPage) Load() {
 		info += fmt.Sprintf("  [magenta]Repeat: %s[-]", state.RepeatMode)
 	}
 
-	p.trackInfo.SetText(info)
+	return info
+}
+
+// UpdateTime is a lightweight refresh that only updates the text (time/progress).
+// Called from the progress ticker — does not touch cover art.
+func (p *NowPlayingPage) UpdateTime() {
+	state := p.app.GetState()
+	if state == nil || state.CurrentTrack == nil {
+		return
+	}
+	p.trackInfo.SetText(p.buildInfoText(state))
+}
+
+// Load refreshes the full now-playing display including cover art.
+func (p *NowPlayingPage) Load() {
+	state := p.app.GetState()
+	if state == nil || state.CurrentTrack == nil {
+		p.trackInfo.SetText("\n  [gray]No track playing[-]")
+		p.coverImage.SetImage(nil)
+		p.mu.Lock()
+		p.lastArtID = ""
+		p.mu.Unlock()
+		return
+	}
+
+	p.trackInfo.SetText(p.buildInfoText(state))
 
 	// Fetch cover art if track has one and it changed
-	artID := t.CoverArtID
+	artID := state.CurrentTrack.CoverArtID
 	p.mu.Lock()
 	changed := artID != p.lastArtID
 	p.lastArtID = artID

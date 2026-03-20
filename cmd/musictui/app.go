@@ -123,6 +123,7 @@ func (a *App) NavigateTo(name string) {
 	a.updateTabBar()
 
 	if page, ok := a.pageMap[name]; ok {
+		a.tviewApp.SetFocus(page)
 		page.Load()
 	}
 }
@@ -134,11 +135,19 @@ func (a *App) GoBack() {
 	}
 	prev := a.history[len(a.history)-1]
 	a.history = a.history[:len(a.history)-1]
+
+	// Clean up dynamic detail pages when leaving them
+	if a.currentPage == "artist-detail" || a.currentPage == "album-detail" || a.currentPage == "playlist-detail" {
+		a.pages.RemovePage(a.currentPage)
+		delete(a.pageMap, a.currentPage)
+	}
+
 	a.currentPage = prev
 	a.pages.SwitchToPage(prev)
 	a.updateTabBar()
 
 	if page, ok := a.pageMap[prev]; ok {
+		a.tviewApp.SetFocus(page)
 		page.Load()
 	}
 }
@@ -254,11 +263,17 @@ func (a *App) progressTicker() {
 	for {
 		select {
 		case <-ticker.C:
-			interpolated, dur := a.GetInterpolatedProgress()
+			a.progress.Mu.Lock()
+			playing := a.progress.Playing
+			dur := a.progress.Dur
+			a.progress.Mu.Unlock()
 
-			if dur <= 0 {
+			// Only queue redraws when actually playing
+			if !playing || dur <= 0 {
 				continue
 			}
+
+			interpolated, _ := a.GetInterpolatedProgress()
 
 			a.tviewApp.QueueUpdateDraw(func() {
 				a.stateMu.RLock()
@@ -267,10 +282,10 @@ func (a *App) progressTicker() {
 				if st != nil {
 					a.statusBar.Update(st, interpolated)
 				}
-				// Update now playing page time display
+				// Lightweight update for now playing page time only
 				if a.currentPage == "nowplaying" {
-					if page, ok := a.pageMap["nowplaying"]; ok {
-						page.Load()
+					if np, ok := a.pageMap["nowplaying"].(*NowPlayingPage); ok {
+						np.UpdateTime()
 					}
 				}
 			})

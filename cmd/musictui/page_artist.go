@@ -98,7 +98,8 @@ func (p *ArtistDetailPage) selectRow(row int) {
 	}
 	r := p.rowMap[idx]
 	if r.isAlbum {
-		// Open album detail
+		// Clean up old detail page, create new one
+		p.app.pages.RemovePage("album-detail")
 		detail := NewAlbumDetailPage(p.app, r.albumID, "")
 		p.app.pages.AddPage("album-detail", detail, true, false)
 		p.app.pageMap["album-detail"] = detail

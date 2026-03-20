@@ -81,6 +81,8 @@ func (p *PlaylistsPage) selectPlaylist(row int) {
 	}
 	pl := p.playlists[idx]
 
+	// Clean up old detail page, create new one
+	p.app.pages.RemovePage("playlist-detail")
 	detail := NewPlaylistDetailPage(p.app, pl.ID, pl.Name)
 	p.app.pages.AddPage("playlist-detail", detail, true, false)
 	p.app.pageMap["playlist-detail"] = detail

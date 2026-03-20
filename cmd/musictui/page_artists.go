@@ -137,7 +137,8 @@ func (p *ArtistsPage) selectArtist(row int) {
 	}
 	artist := p.artists[idx]
 
-	// Create and navigate to artist detail page
+	// Clean up old detail page, create new one
+	p.app.pages.RemovePage("artist-detail")
 	detail := NewArtistDetailPage(p.app, artist.ID, artist.Name)
 	p.app.pages.AddPage("artist-detail", detail, true, false)
 	p.app.pageMap["artist-detail"] = detail
