@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"embed"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -1137,6 +1138,315 @@ func computeFileHash(filePath string) (string, error) {
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
+// extractDuration returns the duration in seconds for an audio file.
+// Supports MP3, M4A/MP4, FLAC, and OGG Vorbis.
+func extractDuration(filePath string) (int, error) {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	switch ext {
+	case ".mp3":
+		return extractMP3Duration(filePath)
+	case ".m4a":
+		return extractM4ADuration(filePath)
+	case ".flac":
+		return extractFLACDuration(filePath)
+	case ".ogg":
+		return extractOGGDuration(filePath)
+	default:
+		return 0, fmt.Errorf("unsupported format: %s", ext)
+	}
+}
+
+// extractM4ADuration reads the mvhd box from an MP4/M4A file to get duration.
+func extractM4ADuration(filePath string) (int, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	var durationSec int
+
+	_, err = mp4.ReadBoxStructure(file, func(h *mp4.ReadHandle) (interface{}, error) {
+		if h.BoxInfo.Type == mp4.BoxTypeMvhd() {
+			box, _, err := h.ReadPayload()
+			if err != nil {
+				return nil, err
+			}
+			if mvhd, ok := box.(*mp4.Mvhd); ok {
+				timescale := mvhd.Timescale
+				if timescale > 0 {
+					if mvhd.GetVersion() == 0 {
+						durationSec = int(mvhd.DurationV0 / timescale)
+					} else {
+						durationSec = int(mvhd.DurationV1 / uint64(timescale))
+					}
+				}
+				return nil, io.EOF // found what we need
+			}
+		}
+		if h.BoxInfo.IsSupportedType() {
+			return h.Expand()
+		}
+		return nil, nil
+	})
+	if err != nil && !errors.Is(err, io.EOF) {
+		return 0, err
+	}
+	return durationSec, nil
+}
+
+// extractFLACDuration reads the STREAMINFO metadata block from a FLAC file.
+func extractFLACDuration(filePath string) (int, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	// Verify FLAC magic: "fLaC"
+	magic := make([]byte, 4)
+	if _, err := io.ReadFull(file, magic); err != nil {
+		return 0, err
+	}
+	if string(magic) != "fLaC" {
+		return 0, fmt.Errorf("not a FLAC file")
+	}
+
+	// Read metadata block header (4 bytes)
+	header := make([]byte, 4)
+	if _, err := io.ReadFull(file, header); err != nil {
+		return 0, err
+	}
+
+	blockType := header[0] & 0x7F
+	blockLen := int(header[1])<<16 | int(header[2])<<8 | int(header[3])
+
+	if blockType != 0 { // STREAMINFO must be first
+		return 0, fmt.Errorf("first block is not STREAMINFO")
+	}
+	if blockLen < 34 {
+		return 0, fmt.Errorf("STREAMINFO block too small")
+	}
+
+	block := make([]byte, blockLen)
+	if _, err := io.ReadFull(file, block); err != nil {
+		return 0, err
+	}
+
+	// STREAMINFO layout (bytes):
+	// 0-1:   min block size
+	// 2-3:   max block size
+	// 4-6:   min frame size
+	// 7-9:   max frame size
+	// 10-13: sample rate (20 bits) | channels (3 bits) | bps (5 bits) | total samples (4 bits)
+	// 14-17: total samples (continued, 32 bits)
+	// 18-33: MD5
+
+	// Sample rate: bits 0-19 of bytes 10-12
+	sampleRate := uint32(block[10])<<12 | uint32(block[11])<<4 | uint32(block[12])>>4
+	if sampleRate == 0 {
+		return 0, fmt.Errorf("zero sample rate")
+	}
+
+	// Total samples: bits 4-7 of byte 13 (high 4 bits) + bytes 14-17 (low 32 bits)
+	totalSamples := uint64(block[13]&0x0F)<<32 |
+		uint64(block[14])<<24 | uint64(block[15])<<16 |
+		uint64(block[16])<<8 | uint64(block[17])
+
+	return int(totalSamples / uint64(sampleRate)), nil
+}
+
+// extractMP3Duration estimates MP3 duration by parsing frame headers.
+func extractMP3Duration(filePath string) (int, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	fi, err := file.Stat()
+	if err != nil {
+		return 0, err
+	}
+	fileSize := fi.Size()
+
+	// Skip ID3v2 tag if present
+	id3Header := make([]byte, 10)
+	if _, err := io.ReadFull(file, id3Header); err != nil {
+		return 0, err
+	}
+
+	offset := int64(0)
+	if string(id3Header[:3]) == "ID3" {
+		// ID3v2 size is stored as syncsafe integer in bytes 6-9
+		tagSize := int64(id3Header[6])<<21 | int64(id3Header[7])<<14 |
+			int64(id3Header[8])<<7 | int64(id3Header[9])
+		offset = tagSize + 10
+	}
+
+	if _, err := file.Seek(offset, io.SeekStart); err != nil {
+		return 0, err
+	}
+
+	// Read a buffer to find the first valid frame and check for Xing/VBRI header
+	buf := make([]byte, 4096)
+	n, err := file.Read(buf)
+	if err != nil {
+		return 0, err
+	}
+	buf = buf[:n]
+
+	// Find first sync word
+	frameStart := -1
+	for i := 0; i < len(buf)-4; i++ {
+		if buf[i] == 0xFF && buf[i+1]&0xE0 == 0xE0 {
+			frameStart = i
+			break
+		}
+	}
+	if frameStart < 0 {
+		return 0, fmt.Errorf("no MP3 sync found")
+	}
+
+	header := binary.BigEndian.Uint32(buf[frameStart:])
+	mpegVer := (header >> 19) & 3
+	layer := (header >> 17) & 3
+	bitrateIdx := (header >> 12) & 0xF
+	srIdx := (header >> 10) & 3
+
+	if bitrateIdx == 0 || bitrateIdx == 15 || srIdx == 3 {
+		return 0, fmt.Errorf("invalid MP3 frame header")
+	}
+
+	// Bitrate table for MPEG1 Layer III (kbps)
+	bitrateTable := [16]int{0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0}
+	// Sample rate table for MPEG1
+	sampleRateTable := [4]int{44100, 48000, 32000, 0}
+
+	bitrate := bitrateTable[bitrateIdx]
+	sampleRate := sampleRateTable[srIdx]
+
+	if mpegVer == 2 { // MPEG2
+		bitrateTable = [16]int{0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0}
+		sampleRateTable = [4]int{22050, 24000, 16000, 0}
+		bitrate = bitrateTable[bitrateIdx]
+		sampleRate = sampleRateTable[srIdx]
+	} else if mpegVer == 0 { // MPEG2.5
+		bitrateTable = [16]int{0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0}
+		sampleRateTable = [4]int{11025, 12000, 8000, 0}
+		bitrate = bitrateTable[bitrateIdx]
+		sampleRate = sampleRateTable[srIdx]
+	}
+
+	if bitrate == 0 || sampleRate == 0 || layer != 1 { // layer 1 = Layer III in the encoding
+		return 0, fmt.Errorf("unsupported MP3 format (bitrate=%d, sr=%d, layer=%d)", bitrate, sampleRate, layer)
+	}
+
+	// Check for Xing VBR header (more accurate for VBR files)
+	// Xing header is at a fixed offset from the frame start
+	xingOffset := frameStart + 36 // MPEG1 stereo default
+	if mpegVer != 3 {             // MPEG2/2.5
+		xingOffset = frameStart + 21
+	}
+
+	if xingOffset+12 < len(buf) {
+		tag := string(buf[xingOffset : xingOffset+4])
+		if tag == "Xing" || tag == "Info" {
+			flags := binary.BigEndian.Uint32(buf[xingOffset+4:])
+			if flags&1 != 0 { // frames field present
+				totalFrames := binary.BigEndian.Uint32(buf[xingOffset+8:])
+				samplesPerFrame := 1152 // MPEG1 Layer III
+				if mpegVer != 3 {
+					samplesPerFrame = 576
+				}
+				return int(uint64(totalFrames) * uint64(samplesPerFrame) / uint64(sampleRate)), nil
+			}
+		}
+	}
+
+	// Fallback: estimate from file size and bitrate (CBR assumption)
+	audioSize := fileSize - offset - int64(frameStart)
+	if audioSize < 0 {
+		audioSize = fileSize
+	}
+	return int(audioSize / int64(bitrate*125)), nil // bitrate*125 = bitrate*1000/8
+}
+
+// extractOGGDuration parses OGG container to find the last granule position.
+func extractOGGDuration(filePath string) (int, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	fi, err := file.Stat()
+	if err != nil {
+		return 0, err
+	}
+
+	// Read the first page to get the sample rate from the Vorbis identification header
+	header := make([]byte, 27)
+	if _, err := io.ReadFull(file, header); err != nil {
+		return 0, err
+	}
+	if string(header[:4]) != "OggS" {
+		return 0, fmt.Errorf("not an OGG file")
+	}
+
+	numSegments := int(header[26])
+	segTable := make([]byte, numSegments)
+	if _, err := io.ReadFull(file, segTable); err != nil {
+		return 0, err
+	}
+	pageDataLen := 0
+	for _, s := range segTable {
+		pageDataLen += int(s)
+	}
+	pageData := make([]byte, pageDataLen)
+	if _, err := io.ReadFull(file, pageData); err != nil {
+		return 0, err
+	}
+
+	// Vorbis identification header starts with 0x01 + "vorbis"
+	sampleRate := uint32(0)
+	if len(pageData) >= 16 && pageData[0] == 1 && string(pageData[1:7]) == "vorbis" {
+		sampleRate = binary.LittleEndian.Uint32(pageData[12:16])
+	}
+	if sampleRate == 0 {
+		return 0, fmt.Errorf("could not find Vorbis sample rate")
+	}
+
+	// Read the last 64KB to find the last OGG page's granule position
+	searchSize := int64(65536)
+	if searchSize > fi.Size() {
+		searchSize = fi.Size()
+	}
+	if _, err := file.Seek(-searchSize, io.SeekEnd); err != nil {
+		return 0, err
+	}
+	tail := make([]byte, searchSize)
+	n, err := io.ReadFull(file, tail)
+	if err != nil && err != io.ErrUnexpectedEOF {
+		return 0, err
+	}
+	tail = tail[:n]
+
+	// Find the last "OggS" sync
+	lastGranule := int64(0)
+	for i := len(tail) - 14; i >= 0; i-- {
+		if string(tail[i:i+4]) == "OggS" {
+			lastGranule = int64(binary.LittleEndian.Uint64(tail[i+6 : i+14]))
+			break
+		}
+	}
+	if lastGranule <= 0 {
+		return 0, fmt.Errorf("could not find last OGG page")
+	}
+
+	return int(lastGranule / int64(sampleRate)), nil
+}
+
 func extractMetadata(filePath string, trackID string) (types.Track, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -1191,9 +1501,11 @@ func extractMetadata(filePath string, trackID string) (types.Track, error) {
 		}
 	}
 
-	// Extract duration in seconds if available
-	// Note: the tag library doesn't provide direct access to duration
-	// We'll set duration to 0 for now, could be enhanced later with additional libraries
+	// Extract duration
+	if dur, err := extractDuration(filePath); err == nil && dur > 0 {
+		track.DurationSec = dur
+		track.Duration = fmt.Sprintf("%d:%02d", dur/60, dur%60)
+	}
 
 	// Use filename as title if no title in metadata
 	if track.Title == "" {
@@ -1587,6 +1899,9 @@ func artistTracksHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if duration.Valid {
 			track.DurationSec = int(duration.Int32)
+			if track.DurationSec > 0 {
+				track.Duration = fmt.Sprintf("%d:%02d", track.DurationSec/60, track.DurationSec%60)
+			}
 		}
 
 		tracks = append(tracks, track)
@@ -1637,6 +1952,9 @@ func albumTracksHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if duration.Valid {
 			track.DurationSec = int(duration.Int32)
+			if track.DurationSec > 0 {
+				track.Duration = fmt.Sprintf("%d:%02d", track.DurationSec/60, track.DurationSec%60)
+			}
 		}
 
 		tracks = append(tracks, track)
