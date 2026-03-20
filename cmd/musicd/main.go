@@ -3240,20 +3240,11 @@ For now, this returns placeholder text to demonstrate the UI functionality.`, ti
 }
 
 // Remote control session handlers
-
-type SessionInfo struct {
-	ID              string    `json:"id"`
-	Name            string    `json:"name"`
-	HasPlayer       bool      `json:"has_player"`
-	ControllerCount int       `json:"controller_count"`
-	LastSeen        time.Time `json:"last_seen"`
-}
-
 func apiSessionsHandler(w http.ResponseWriter, r *http.Request) {
 	hub.mu.RLock()
 	defer hub.mu.RUnlock()
 
-	sessions := make([]SessionInfo, 0)
+	sessions := make([]types.SessionInfo, 0)
 	for _, sess := range hub.sessions {
 		sess.mu.Lock()
 		hasPlayer := sess.PlayerConn != nil
@@ -3262,7 +3253,7 @@ func apiSessionsHandler(w http.ResponseWriter, r *http.Request) {
 		sessionID := sess.ID
 		sess.mu.Unlock()
 
-		sessions = append(sessions, SessionInfo{
+		sessions = append(sessions, types.SessionInfo{
 			ID:              sessionID,
 			Name:            sessionName,
 			HasPlayer:       hasPlayer,

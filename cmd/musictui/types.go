@@ -15,14 +15,6 @@ type APIResponse struct {
 	Search     string          `json:"search"`
 }
 
-// SessionInfo from /api/sessions.
-type SessionInfo struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	HasPlayer       bool   `json:"has_player"`
-	ControllerCount int    `json:"controller_count"`
-}
-
 // PlayerState is the deserialized WebSocket state broadcast.
 type PlayerState struct {
 	Type            string                 `json:"type"`

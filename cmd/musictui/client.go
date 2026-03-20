@@ -57,12 +57,12 @@ func paginationParams(page, pageSize int, search string) url.Values {
 }
 
 // GetSessions returns all active player sessions.
-func (c *APIClient) GetSessions() ([]SessionInfo, error) {
+func (c *APIClient) GetSessions() ([]types.SessionInfo, error) {
 	data, err := c.get("/api/sessions", nil)
 	if err != nil {
 		return nil, err
 	}
-	var sessions []SessionInfo
+	var sessions []types.SessionInfo
 	if err := json.Unmarshal(data, &sessions); err != nil {
 		return nil, fmt.Errorf("decode sessions: %w", err)
 	}
