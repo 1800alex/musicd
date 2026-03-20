@@ -159,6 +159,15 @@ func (c *APIClient) GetPlaylists() ([]types.Playlist, error) {
 	return playlists, nil
 }
 
+// GetCoverArt fetches raw cover art image bytes.
+func (c *APIClient) GetCoverArt(id string) ([]byte, error) {
+	data, err := c.get("/api/cover-art/"+id, nil)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 // GetPlaylistTracks returns paginated tracks for a playlist.
 func (c *APIClient) GetPlaylistTracks(id string, page, pageSize int, search string) (*types.APIResponseJSON, []types.Track, error) {
 	data, err := c.get("/api/playlist/"+id+"/tracks", paginationParams(page, pageSize, search))

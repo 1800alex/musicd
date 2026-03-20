@@ -21,6 +21,7 @@ func main() {
 	app.RegisterPage("artists", NewArtistsPage(app))
 	app.RegisterPage("playlists", NewPlaylistsPage(app))
 	app.RegisterPage("queue", NewQueuePage(app))
+	app.RegisterPage("nowplaying", NewNowPlayingPage(app))
 
 	if *session != "" {
 		app.ConnectToSession(*session, "")

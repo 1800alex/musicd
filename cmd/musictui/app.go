@@ -89,6 +89,7 @@ func (a *App) updateTabBar() {
 		{"2", "Artists", "artists"},
 		{"3", "Playlists", "playlists"},
 		{"q", "Queue", "queue"},
+		{"p", "Playing", "nowplaying"},
 		{"c", "Connect", "connect"},
 	}
 
@@ -198,6 +199,12 @@ func (a *App) onStateUpdate(state PlayerState) {
 		// Update queue page if visible
 		if a.currentPage == "queue" {
 			if page, ok := a.pageMap["queue"]; ok {
+				page.Load()
+			}
+		}
+		// Update now playing page if visible
+		if a.currentPage == "nowplaying" {
+			if page, ok := a.pageMap["nowplaying"]; ok {
 				page.Load()
 			}
 		}
@@ -364,6 +371,9 @@ func (a *App) setupGlobalKeys() {
 			case '3':
 				a.NavigateTo("playlists")
 				return nil
+			case 'p':
+				a.NavigateTo("nowplaying")
+				return nil
 			case 'c':
 				a.NavigateTo("connect")
 				return nil
@@ -384,6 +394,7 @@ func (a *App) showHelp() {
 [white]Navigation[-]
   1/2/3    Tracks/Artists/Playlists
   q        Queue
+  p        Now Playing
   c        Connect/Settings
   Enter/l  Select item
   h/Esc    Go back
