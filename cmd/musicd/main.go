@@ -13,6 +13,7 @@ import (
 	"io/fs"
 	"log"
 	"mime"
+	"musicd/lib/types"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -114,115 +115,6 @@ type SessionHub struct {
 
 var hub = &SessionHub{sessions: make(map[string]*PlayerSession)}
 var serverHostname string
-
-type Track struct {
-	ID                 string `json:"id"`
-	Filename           string `json:"filename"`
-	Title              string `json:"title"`
-	Artist             string `json:"artist"`
-	Album              string `json:"album"`
-	Year               int    `json:"year"`
-	FilePath           string `json:"file_path"`
-	FileHash           string `json:"file_hash"`
-	CoverArtID         string `json:"cover_art_id"`
-	Duration           string `json:"duration"`
-	DurationSec        int    `json:"duration_seconds"`
-	PlaylistPositionID string `json:"playlist_position_id"` // Unique ID per playlist position (empty for non-playlist contexts)
-}
-
-type Playlist struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Path        string `json:"path"`
-	TrackCount  int    `json:"track_count"`
-	CoverArtID  string `json:"cover_art_id"`
-}
-
-type PlaylistData struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	Path        string  `json:"path"`
-	Tracks      []Track `json:"tracks"`
-	CoverArtID  string  `json:"cover_art_id"`
-}
-
-type Album struct {
-	ID         string  `json:"id"`
-	Name       string  `json:"name"`
-	Artist     string  `json:"artist"`
-	Year       int     `json:"year"`
-	Tracks     []Track `json:"tracks"`
-	TrackCount int     `json:"track_count"`
-	CoverArtID string  `json:"cover_art_id"`
-}
-
-type Artist struct {
-	ID         string   `json:"id"`
-	Name       string   `json:"name"`
-	CoverArtID string   `json:"cover_art_id"`
-	Albums     []*Album `json:"albums"`
-	Tracks     []Track  `json:"tracks"` // All tracks by this artist
-	TrackCount int      `json:"track_count"`
-}
-
-// MusicLibrary struct removed - now using database-only approach
-
-type CreatePlaylistRequest struct {
-	Name       string `json:"name"`
-	Location   string `json:"location"`   // "music", "playlists", or "custom"
-	CustomPath string `json:"customPath"` // only used if location is "custom"
-}
-
-type PageData struct {
-	Tracks     []Track
-	Playlists  []Playlist
-	Page       int
-	PageSize   int
-	TotalPages int
-	Search     string
-}
-
-type PlaylistPageData struct {
-	Playlist          Playlist
-	PaginatedPlaylist Playlist
-	AllPlaylists      []Playlist
-	Page              int
-	PageSize          int
-	TotalPages        int
-	Search            string
-}
-
-type ArtistsPageData struct {
-	Artists    []Artist
-	Playlists  []Playlist
-	Page       int
-	PageSize   int
-	TotalPages int
-	Search     string
-}
-
-type ArtistPageData struct {
-	Artist          Artist
-	Albums          []Album
-	PaginatedTracks []Track
-	AllPlaylists    []Playlist
-	Page            int
-	PageSize        int
-	TotalPages      int
-	Search          string
-}
-
-type AlbumPageData struct {
-	Album        Album
-	Artist       string
-	AllPlaylists []Playlist
-	Page         int
-	PageSize     int
-	TotalPages   int
-	Search       string
-}
 
 // Removed global library variable - using database-only approach
 var musicDir = "./music"         // Configure this path
@@ -404,7 +296,7 @@ func createOrFindAlbum(title string, artistID string, year int, coverArtID strin
 	return albumID, err
 }
 
-func trackNeedsUpdate(existingTrack, newTrack Track) bool {
+func trackNeedsUpdate(existingTrack, newTrack types.Track) bool {
 	// First check file hash - if it's the same, the file hasn't changed at all
 	// This is much more efficient than comparing metadata fields
 	if existingTrack.FileHash == "" {
@@ -439,7 +331,7 @@ func trackNeedsUpdate(existingTrack, newTrack Track) bool {
 	return false
 }
 
-func insertNewSong(track Track) error {
+func insertNewSong(track types.Track) error {
 	// Create or find the artist first
 	_, err := createOrFindArtist(track.Artist, track.CoverArtID)
 	if err != nil {
@@ -471,7 +363,7 @@ func insertNewSong(track Track) error {
 	return err
 }
 
-func updateExistingSong(track Track) error {
+func updateExistingSong(track types.Track) error {
 	// Create or find the artist
 	artistID, err := createOrFindArtist(track.Artist, track.CoverArtID)
 	if err != nil {
@@ -506,7 +398,7 @@ func updateExistingSong(track Track) error {
 	return err
 }
 
-func getExistingSongs() (map[string]Track, error) {
+func getExistingSongs() (map[string]types.Track, error) {
 	query := `
 		SELECT id, title, artist, album, year, file_path, file_hash, cover_art_id, duration
 		FROM songs
@@ -518,9 +410,9 @@ func getExistingSongs() (map[string]Track, error) {
 	}
 	defer rows.Close()
 
-	songs := make(map[string]Track)
+	songs := make(map[string]types.Track)
 	for rows.Next() {
-		var track Track
+		var track types.Track
 		var coverArtID sql.NullString
 		var fileHash sql.NullString
 		err := rows.Scan(&track.ID, &track.Title, &track.Artist, &track.Album, &track.Year, &track.FilePath, &fileHash, &coverArtID, &track.DurationSec)
@@ -1005,7 +897,7 @@ func scanMusicLibrary() error {
 	existingSongs, err := getExistingSongs()
 	if err != nil {
 		log.Printf("Error getting existing songs: %v", err)
-		existingSongs = make(map[string]Track)
+		existingSongs = make(map[string]types.Track)
 	}
 
 	currentPaths := []string{}
@@ -1245,16 +1137,16 @@ func computeFileHash(filePath string) (string, error) {
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
-func extractMetadata(filePath string, trackID string) (Track, error) {
+func extractMetadata(filePath string, trackID string) (types.Track, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return Track{}, err
+		return types.Track{}, err
 	}
 	defer file.Close()
 
 	m, err := tag.ReadFrom(file)
 	if err != nil {
-		return Track{}, err
+		return types.Track{}, err
 	}
 
 	// Generate UUID if not provided
@@ -1262,7 +1154,7 @@ func extractMetadata(filePath string, trackID string) (Track, error) {
 		trackID = uuid.New().String()
 	}
 
-	track := Track{
+	track := types.Track{
 		ID:       trackID,
 		Filename: filepath.Base(filePath),
 		Title:    cleanString(m.Title()),
@@ -1548,9 +1440,9 @@ func writePlaylistToFile(playlistID, filePath string) error {
 
 // Legacy loadPlaylist function removed - incompatible with database-only approach
 
-func filterTracks(tracks []Track, search string) []Track {
+func filterTracks(tracks []types.Track, search string) []types.Track {
 	search = strings.ToLower(search)
-	filtered := []Track{}
+	filtered := []types.Track{}
 
 	for _, track := range tracks {
 		if strings.Contains(strings.ToLower(track.Title), search) ||
@@ -1564,9 +1456,9 @@ func filterTracks(tracks []Track, search string) []Track {
 	return filtered
 }
 
-func filterArtists(artists []Artist, search string) []Artist {
+func filterArtists(artists []types.Artist, search string) []types.Artist {
 	search = strings.ToLower(search)
-	filtered := []Artist{}
+	filtered := []types.Artist{}
 	for _, artist := range artists {
 		if strings.Contains(strings.ToLower(artist.Name), search) {
 			filtered = append(filtered, artist)
@@ -1576,7 +1468,7 @@ func filterArtists(artists []Artist, search string) []Artist {
 }
 
 func createPlaylistHandler(w http.ResponseWriter, r *http.Request) {
-	var req CreatePlaylistRequest
+	var req types.CreatePlaylistRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -1674,9 +1566,9 @@ func artistTracksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var tracks []Track
+	var tracks []types.Track
 	for rows.Next() {
-		var track Track
+		var track types.Track
 		var coverArtID sql.NullString
 		var year sql.NullInt32
 		var duration sql.NullInt32
@@ -1724,9 +1616,9 @@ func albumTracksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var tracks []Track
+	var tracks []types.Track
 	for rows.Next() {
-		var track Track
+		var track types.Track
 		var coverArtID sql.NullString
 		var year sql.NullInt32
 		var duration sql.NullInt32
@@ -1815,7 +1707,7 @@ func apiTrackByIDHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	trackID := vars["id"]
 
-	var track Track
+	var track types.Track
 	var coverArtID *string
 	var year *int
 	var duration *int
@@ -1930,9 +1822,9 @@ func apiTracksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var tracks []Track
+	var tracks []types.Track
 	for rows.Next() {
-		var track Track
+		var track types.Track
 		var coverArtID *string
 		var year *int
 		var duration *int
@@ -2000,9 +1892,9 @@ func apiPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var playlists []Playlist
+	var playlists []types.Playlist
 	for rows.Next() {
-		var playlist Playlist
+		var playlist types.Playlist
 		var description sql.NullString
 		var trackCount int
 		var coverArtID sql.NullString
@@ -2030,7 +1922,7 @@ func apiPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func apiCreatePlaylistHandler(w http.ResponseWriter, r *http.Request) {
-	var req CreatePlaylistRequest
+	var req types.CreatePlaylistRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -2118,7 +2010,7 @@ func apiPlaylistByIDHandler(w http.ResponseWriter, r *http.Request) {
 	playlistID := vars["id"]
 
 	// Get playlist from database
-	var playlist Playlist
+	var playlist types.Playlist
 	var description sql.NullString
 	var filePath sql.NullString
 	var coverArtID sql.NullString
@@ -2152,9 +2044,9 @@ func apiPlaylistByIDHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// var tracks []Track
+	// var tracks []types.Track
 	// for rows.Next() {
-	// 	var track Track
+	// 	var track types.Track
 	// 	var coverArtID *string
 	// 	var year *int
 	// 	var duration *int
@@ -2277,9 +2169,9 @@ func apiPlaylistTracksByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var tracks []Track
+	var tracks []types.Track
 	for rows.Next() {
-		var track Track
+		var track types.Track
 		var coverArtID *string
 		var year *int
 		var duration *int
@@ -2598,9 +2490,9 @@ func apiArtistsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var pageArtists []Artist
+	var pageArtists []types.Artist
 	for rows.Next() {
-		var artist Artist
+		var artist types.Artist
 		var coverArtID sql.NullString
 		var albumCount, trackCount int
 
@@ -2628,7 +2520,7 @@ func apiArtistsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for albumRows.Next() {
-			var album Album
+			var album types.Album
 			var albumCoverArtID sql.NullString
 			var year sql.NullInt32
 
@@ -2657,14 +2549,14 @@ func apiArtistsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Create tracks array with correct length but don't populate (for performance)
-			album.Tracks = make([]Track, albumTrackCount)
+			album.Tracks = make([]types.Track, albumTrackCount)
 
 			artist.Albums = append(artist.Albums, &album)
 		}
 		albumRows.Close()
 
 		// Create tracks array with correct length but don't populate (for performance)
-		artist.Tracks = make([]Track, trackCount)
+		artist.Tracks = make([]types.Track, trackCount)
 
 		pageArtists = append(pageArtists, artist)
 	}
@@ -2688,7 +2580,7 @@ func apiArtistByIDHandler(w http.ResponseWriter, r *http.Request) {
 	artistID := vars["id"]
 
 	// Query artist directly from database
-	var artist Artist
+	var artist types.Artist
 	var coverArtID *string
 
 	err := db.QueryRow(`
@@ -2726,9 +2618,9 @@ func apiArtistByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer albumRows.Close()
 
-	var albums []*Album
+	var albums []*types.Album
 	for albumRows.Next() {
-		var album Album
+		var album types.Album
 		var year *int
 		var coverArtID *string
 
@@ -2764,11 +2656,11 @@ func apiArtistByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer trackRows.Close()
 
-	var tracks []Track
-	albumTracksMap := make(map[string][]Track) // Map album name to tracks
+	var tracks []types.Track
+	albumTracksMap := make(map[string][]types.Track) // Map album name to tracks
 
 	for trackRows.Next() {
-		var track Track
+		var track types.Track
 		var coverArtID *string
 		var year *int
 		var duration *int
@@ -2825,7 +2717,7 @@ func apiArtistByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	tracks = artist.Tracks
 	if searchQuery != "" {
-		var filteredTracks []Track
+		var filteredTracks []types.Track
 		searchLower := strings.ToLower(searchQuery)
 		for _, track := range tracks {
 			if strings.Contains(strings.ToLower(track.Title), searchLower) ||
@@ -2843,7 +2735,7 @@ func apiArtistByIDHandler(w http.ResponseWriter, r *http.Request) {
 		endIdx = len(tracks)
 	}
 
-	var pagedTracks []Track
+	var pagedTracks []types.Track
 	if startIdx < len(tracks) {
 		pagedTracks = tracks[startIdx:endIdx]
 	}
@@ -2960,9 +2852,9 @@ func apiArtistTracksByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer trackRows.Close()
 
-	var tracks []Track
+	var tracks []types.Track
 	for trackRows.Next() {
-		var track Track
+		var track types.Track
 		var coverArtID *string
 		var year *int
 		var duration *int
@@ -3012,7 +2904,7 @@ func apiAlbumByIDHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("DEBUG: apiAlbumByIDHandler called with albumID: %s", albumID)
 
 	// Query album directly from database
-	var album Album
+	var album types.Album
 	var artistName string
 	var year *int
 	var coverArtID *string
@@ -3060,9 +2952,9 @@ func apiAlbumByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer trackRows.Close()
 
-	var tracks []Track
+	var tracks []types.Track
 	for trackRows.Next() {
-		var track Track
+		var track types.Track
 		var coverArtID *string
 		var year *int
 		var duration *int
@@ -3107,7 +2999,7 @@ func apiAlbumByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	tracks = album.Tracks
 	if searchQuery != "" {
-		var filteredTracks []Track
+		var filteredTracks []types.Track
 		searchLower := strings.ToLower(searchQuery)
 		for _, track := range tracks {
 			if strings.Contains(strings.ToLower(track.Title), searchLower) ||
@@ -3125,7 +3017,7 @@ func apiAlbumByIDHandler(w http.ResponseWriter, r *http.Request) {
 		endIdx = len(tracks)
 	}
 
-	var pagedTracks []Track
+	var pagedTracks []types.Track
 	if startIdx < len(tracks) {
 		pagedTracks = tracks[startIdx:endIdx]
 	}
@@ -3250,9 +3142,9 @@ func apiAlbumTracksByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer trackRows.Close()
 
-	var tracks []Track
+	var tracks []types.Track
 	for trackRows.Next() {
-		var track Track
+		var track types.Track
 		var coverArtID *string
 		var year *int
 		var duration *int
