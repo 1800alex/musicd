@@ -11,7 +11,9 @@ const animDuration = ref("6s");
 const MIN_SCALE = 0.85;
 
 const measure = () => {
-	if (!container.value || !inner.value) return;
+	if (!container.value || !inner.value) {
+		return;
+	}
 
 	// Reset state
 	scale.value = 1;
@@ -19,7 +21,9 @@ const measure = () => {
 
 	// Container width is the available space
 	const cw = container.value.clientWidth;
-	if (cw <= 0) return;
+	if (cw <= 0) {
+		return;
+	}
 
 	// Measure the natural text width using a Range — this gives the true
 	// content width regardless of overflow/clipping in the ancestor chain.

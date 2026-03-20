@@ -229,7 +229,9 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 						// If we have a playlist_position_id, fetch all tracks and find the specific one
 						if (playlistPositionId) {
 							const tracksResponse = await backendService.FetchPlaylistTracks(playlistId, { pageSize: 10000 });
-							const track = tracksResponse?.data?.find((t: any) => t.playlist_position_id === playlistPositionId);
+							const track = tracksResponse?.data?.find(
+								(t: any) => t.playlist_position_id === playlistPositionId
+							);
 							if (track) {
 								player.PlayPlaylistTrack(track, playlist, value?.search);
 							}

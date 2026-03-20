@@ -284,8 +284,8 @@ watch(
 			</div>
 			<select
 				v-if="showPageSize"
-				data-testid="track-page-size-select"
 				v-model="pageSize"
+				data-testid="track-page-size-select"
 				class="page-size-select"
 				@change="onPageSizeChange"
 			>

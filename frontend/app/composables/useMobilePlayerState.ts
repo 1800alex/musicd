@@ -259,7 +259,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 		const elapsed = Date.now() - state.fullscreenDrag.startTime;
 		const axis = state.fullscreenDrag.lockedAxis;
 
-		if (axis === "vertical") {
+		if ("vertical" === axis) {
 			// Vertical: close gesture
 			const velocity = elapsed > 0 ? state.fullscreenDrag.offsetY / elapsed : 0;
 			const screenPercent = state.fullscreenDrag.offsetY / window.innerHeight;
@@ -269,7 +269,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 				await heavyTap();
 				state.showFullscreen = false;
 			}
-		} else if (axis === "horizontal") {
+		} else if ("horizontal" === axis) {
 			// Horizontal: track change gesture
 			const absX = Math.abs(state.fullscreenDrag.offsetX);
 			const velocity = elapsed > 0 ? absX / elapsed : 0;
@@ -328,7 +328,7 @@ export function useMobilePlayerState(playerRef: Ref<PlayerService | null>) {
 			state.miniPlayerDrag.lockedAxis = Math.abs(deltaY) >= Math.abs(deltaX) ? "vertical" : "horizontal";
 		}
 
-		if (state.miniPlayerDrag.lockedAxis === "vertical") {
+		if ("vertical" === state.miniPlayerDrag.lockedAxis) {
 			// Only allow upward drag (negative delta)
 			state.miniPlayerDrag.offsetY = deltaY < 0 ? Math.abs(deltaY) : 0;
 			state.miniPlayerDrag.offsetX = 0;

@@ -15,7 +15,9 @@ const filterInput = ref<HTMLInputElement | null>(null);
 
 const filtered = computed(() => {
 	const q = filter.value.toLowerCase().trim();
-	if (!q) return props.playlists;
+	if (!q) {
+		return props.playlists;
+	}
 	return props.playlists.filter((p) => p.name.toLowerCase().includes(q));
 });
 

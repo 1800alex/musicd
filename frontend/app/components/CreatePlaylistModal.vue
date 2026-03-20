@@ -45,7 +45,7 @@ const handleClose = () => {
 };
 
 const handleKeyUp = (event: KeyboardEvent) => {
-	if (event.key === "Enter" && playlistName.value.trim()) {
+	if ("Enter" === event.key && playlistName.value.trim()) {
 		handleCreate();
 	}
 };
@@ -82,12 +82,7 @@ const handleKeyUp = (event: KeyboardEvent) => {
 			<div v-if="playlistLocation === 'custom'" class="field">
 				<label class="label has-text-white">Custom Path</label>
 				<div class="control">
-					<input
-						v-model="playlistCustomPath"
-						class="input"
-						type="text"
-						placeholder="folder/subfolder"
-					/>
+					<input v-model="playlistCustomPath" class="input" type="text" placeholder="folder/subfolder" />
 				</div>
 			</div>
 			<div class="playlist-modal-buttons">
