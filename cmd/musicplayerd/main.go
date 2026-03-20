@@ -134,7 +134,7 @@ type Daemon struct {
 	mu              sync.RWMutex
 	isPlaying       bool
 	currentTime     float64
-	duration        float64
+	duration        int
 	volume          float64 // 0–100
 	muted           bool
 	currentPlaylist map[string]interface{} // {"id":"...", "name":"..."} or nil
@@ -184,7 +184,7 @@ func main() {
 	}
 	mpv.OnDuration = func(dur float64) {
 		d.mu.Lock()
-		d.duration = dur
+		d.duration = int(dur)
 		d.mu.Unlock()
 	}
 	mpv.OnTrackEnd = func(reason, fileError string) {
