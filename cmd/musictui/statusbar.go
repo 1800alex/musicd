@@ -110,8 +110,8 @@ func (s *StatusBar) Update(state *PlayerState) {
 	s.controls.SetText(fmt.Sprintf("%s%s%s  %s ", playIcon, shuffleStr, repeatStr, volStr))
 }
 
-func formatDuration[T float64 | int](seconds T) string {
-	total := int(seconds)
+func formatDuration(seconds int) string {
+	total := seconds
 	m := total / 60
 	s := total % 60
 	return fmt.Sprintf("%d:%02d", m, s)
