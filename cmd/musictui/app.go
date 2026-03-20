@@ -122,8 +122,8 @@ func (a *App) NavigateTo(name string) {
 	a.pages.SwitchToPage(name)
 	a.updateTabBar()
 
+	a.tviewApp.SetFocus(a.pages)
 	if page, ok := a.pageMap[name]; ok {
-		a.tviewApp.SetFocus(page)
 		page.Load()
 	}
 }
@@ -146,8 +146,8 @@ func (a *App) GoBack() {
 	a.pages.SwitchToPage(prev)
 	a.updateTabBar()
 
+	a.tviewApp.SetFocus(a.pages)
 	if page, ok := a.pageMap[prev]; ok {
-		a.tviewApp.SetFocus(page)
 		page.Load()
 	}
 }
