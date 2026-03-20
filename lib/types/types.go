@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type Track struct {
 	ID                 string `json:"id"`
@@ -58,6 +61,26 @@ type CreatePlaylistRequest struct {
 	Name       string `json:"name"`
 	Location   string `json:"location"`   // "music", "playlists", or "custom"
 	CustomPath string `json:"customPath"` // only used if location is "custom"
+}
+
+// APIResponse is the paginated envelope for list endpoints.
+type APIResponseJSON struct {
+	Data       json.RawMessage `json:"data"`
+	Page       int             `json:"page"`
+	PageSize   int             `json:"pageSize"`
+	TotalPages int             `json:"totalPages"`
+	Total      int             `json:"total"`
+	Search     string          `json:"search"`
+}
+
+// API Response structures
+type APIResponse struct {
+	Data       interface{} `json:"data"`
+	Page       int         `json:"page"`
+	PageSize   int         `json:"pageSize"`
+	TotalPages int         `json:"totalPages"`
+	Search     string      `json:"search"`
+	Total      int         `json:"total"`
 }
 
 type PageData struct {
