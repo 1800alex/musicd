@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"musicd/lib/types"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -13,7 +14,7 @@ type QueuePage struct {
 	table  *tview.Table
 	status *tview.TextView
 	app    *App
-	tracks []Track
+	tracks []types.Track
 }
 
 // NewQueuePage creates a new queue view page.

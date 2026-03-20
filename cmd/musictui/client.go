@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"musicd/lib/types"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -69,7 +70,7 @@ func (c *APIClient) GetSessions() ([]SessionInfo, error) {
 }
 
 // GetTracks returns a paginated list of tracks.
-func (c *APIClient) GetTracks(page, pageSize int, search string) (*APIResponse, []Track, error) {
+func (c *APIClient) GetTracks(page, pageSize int, search string) (*APIResponse, []types.Track, error) {
 	data, err := c.get("/api/tracks", paginationParams(page, pageSize, search))
 	if err != nil {
 		return nil, nil, err
@@ -78,7 +79,7 @@ func (c *APIClient) GetTracks(page, pageSize int, search string) (*APIResponse, 
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return nil, nil, fmt.Errorf("decode tracks response: %w", err)
 	}
-	var tracks []Track
+	var tracks []types.Track
 	if err := json.Unmarshal(resp.Data, &tracks); err != nil {
 		return nil, nil, fmt.Errorf("decode tracks data: %w", err)
 	}
@@ -86,7 +87,7 @@ func (c *APIClient) GetTracks(page, pageSize int, search string) (*APIResponse, 
 }
 
 // GetArtists returns a paginated list of artists.
-func (c *APIClient) GetArtists(page, pageSize int, search string) (*APIResponse, []Artist, error) {
+func (c *APIClient) GetArtists(page, pageSize int, search string) (*APIResponse, []types.Artist, error) {
 	data, err := c.get("/api/artists", paginationParams(page, pageSize, search))
 	if err != nil {
 		return nil, nil, err
@@ -95,7 +96,7 @@ func (c *APIClient) GetArtists(page, pageSize int, search string) (*APIResponse,
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return nil, nil, fmt.Errorf("decode artists response: %w", err)
 	}
-	var artists []Artist
+	var artists []types.Artist
 	if err := json.Unmarshal(resp.Data, &artists); err != nil {
 		return nil, nil, fmt.Errorf("decode artists data: %w", err)
 	}
@@ -103,12 +104,12 @@ func (c *APIClient) GetArtists(page, pageSize int, search string) (*APIResponse,
 }
 
 // GetArtist returns artist detail with albums and tracks.
-func (c *APIClient) GetArtist(id string) (*ArtistDetail, error) {
+func (c *APIClient) GetArtist(id string) (*types.Artist, error) {
 	data, err := c.get("/api/artist/"+id, nil)
 	if err != nil {
 		return nil, err
 	}
-	var artist ArtistDetail
+	var artist types.Artist
 	if err := json.Unmarshal(data, &artist); err != nil {
 		return nil, fmt.Errorf("decode artist: %w", err)
 	}
@@ -116,12 +117,12 @@ func (c *APIClient) GetArtist(id string) (*ArtistDetail, error) {
 }
 
 // GetAlbum returns album detail with tracks.
-func (c *APIClient) GetAlbum(id string) (*Album, error) {
+func (c *APIClient) GetAlbum(id string) (*types.Album, error) {
 	data, err := c.get("/api/album/"+id, nil)
 	if err != nil {
 		return nil, err
 	}
-	var album Album
+	var album types.Album
 	if err := json.Unmarshal(data, &album); err != nil {
 		return nil, fmt.Errorf("decode album: %w", err)
 	}
@@ -129,7 +130,7 @@ func (c *APIClient) GetAlbum(id string) (*Album, error) {
 }
 
 // GetAlbumTracks returns paginated tracks for an album.
-func (c *APIClient) GetAlbumTracks(id string, page, pageSize int, search string) (*APIResponse, []Track, error) {
+func (c *APIClient) GetAlbumTracks(id string, page, pageSize int, search string) (*APIResponse, []types.Track, error) {
 	data, err := c.get("/api/album/"+id+"/tracks", paginationParams(page, pageSize, search))
 	if err != nil {
 		return nil, nil, err
@@ -138,7 +139,7 @@ func (c *APIClient) GetAlbumTracks(id string, page, pageSize int, search string)
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return nil, nil, fmt.Errorf("decode album tracks response: %w", err)
 	}
-	var tracks []Track
+	var tracks []types.Track
 	if err := json.Unmarshal(resp.Data, &tracks); err != nil {
 		return nil, nil, fmt.Errorf("decode album tracks data: %w", err)
 	}
@@ -146,12 +147,12 @@ func (c *APIClient) GetAlbumTracks(id string, page, pageSize int, search string)
 }
 
 // GetPlaylists returns all playlists (not paginated).
-func (c *APIClient) GetPlaylists() ([]Playlist, error) {
+func (c *APIClient) GetPlaylists() ([]types.Playlist, error) {
 	data, err := c.get("/api/playlists", nil)
 	if err != nil {
 		return nil, err
 	}
-	var playlists []Playlist
+	var playlists []types.Playlist
 	if err := json.Unmarshal(data, &playlists); err != nil {
 		return nil, fmt.Errorf("decode playlists: %w", err)
 	}
@@ -159,7 +160,7 @@ func (c *APIClient) GetPlaylists() ([]Playlist, error) {
 }
 
 // GetPlaylistTracks returns paginated tracks for a playlist.
-func (c *APIClient) GetPlaylistTracks(id string, page, pageSize int, search string) (*APIResponse, []Track, error) {
+func (c *APIClient) GetPlaylistTracks(id string, page, pageSize int, search string) (*APIResponse, []types.Track, error) {
 	data, err := c.get("/api/playlist/"+id+"/tracks", paginationParams(page, pageSize, search))
 	if err != nil {
 		return nil, nil, err
@@ -168,7 +169,7 @@ func (c *APIClient) GetPlaylistTracks(id string, page, pageSize int, search stri
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return nil, nil, fmt.Errorf("decode playlist tracks response: %w", err)
 	}
-	var tracks []Track
+	var tracks []types.Track
 	if err := json.Unmarshal(resp.Data, &tracks); err != nil {
 		return nil, nil, fmt.Errorf("decode playlist tracks data: %w", err)
 	}

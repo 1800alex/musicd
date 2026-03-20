@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"musicd/lib/types"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -15,7 +16,7 @@ type ArtistsPage struct {
 	statusLine *tview.TextView
 	pagination *PaginationState
 	app        *App
-	artists    []Artist
+	artists    []types.Artist
 	searching  bool
 }
 

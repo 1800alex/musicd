@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"musicd/lib/types"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -15,7 +16,7 @@ type ArtistDetailPage struct {
 	app      *App
 	artistID string
 	name     string
-	artist   *ArtistDetail
+	artist   *types.Artist
 	// Row mapping: row index -> what it represents
 	rowMap []artistRow
 }
@@ -23,7 +24,7 @@ type ArtistDetailPage struct {
 type artistRow struct {
 	isAlbum bool
 	albumID string
-	track   *Track
+	track   *types.Track
 }
 
 // NewArtistDetailPage creates a new artist detail page.

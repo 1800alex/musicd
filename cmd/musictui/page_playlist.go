@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"musicd/lib/types"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -17,7 +18,7 @@ type PlaylistDetailPage struct {
 	app        *App
 	playlistID string
 	name       string
-	tracks     []Track
+	tracks     []types.Track
 	searching  bool
 }
 
@@ -146,10 +147,10 @@ func (p *PlaylistDetailPage) selectTrack(row int) {
 	}
 	t := p.tracks[idx]
 	p.app.SendCommand("play_playlist_track", map[string]interface{}{
-		"id":                    t.ID,
-		"playlist_id":           p.playlistID,
-		"playlist_position_id":  t.PlaylistPositionID,
-		"playlist_name":         p.name,
+		"id":                   t.ID,
+		"playlist_id":          p.playlistID,
+		"playlist_position_id": t.PlaylistPositionID,
+		"playlist_name":        p.name,
 	})
 }
 

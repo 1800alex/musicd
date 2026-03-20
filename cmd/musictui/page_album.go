@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"musicd/lib/types"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -14,7 +15,7 @@ type AlbumDetailPage struct {
 	status  *tview.TextView
 	app     *App
 	albumID string
-	album   *Album
+	album   *types.Album
 }
 
 // NewAlbumDetailPage creates a new album detail page.
