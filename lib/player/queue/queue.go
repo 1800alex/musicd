@@ -1,30 +1,31 @@
-package main
+package queue
 
 import (
 	"math/rand"
+	"musicd/lib/types"
 	"sync"
 )
 
 // Queue manages the playback queue, history, shuffle, and repeat state.
 // All methods are safe for concurrent use. No I/O is performed — callers
-// use the returned *Track to decide what to play.
+// use the returned *types.Track to decide what to play.
 type Queue struct {
 	mu             sync.RWMutex
-	currentTrack   *Track
-	priorityQueue  []Track // explicit user-queued tracks; consumed before context queue
-	queue          []Track // context tracks (album/playlist/artist)
-	history        []Track
-	originalTracks []Track // original ordered list from PlayTracks, for restoring order
+	currentTrack   *types.Track
+	priorityQueue  []types.Track // explicit user-queued tracks; consumed before context queue
+	queue          []types.Track // context tracks (album/playlist/artist)
+	history        []types.Track
+	originalTracks []types.Track // original ordered list from PlayTracks, for restoring order
 	Shuffle        bool
 	RepeatMode     string // "Off" | "One" | "All"
 }
 
 // QueueState is a snapshot of the queue for broadcasting.
 type QueueState struct {
-	CurrentTrack  *Track
-	PriorityQueue []Track // user-added tracks, play before context queue
-	Queue         []Track // context tracks
-	History       []Track
+	CurrentTrack  *types.Track
+	PriorityQueue []types.Track // user-added tracks, play before context queue
+	Queue         []types.Track // context tracks
+	History       []types.Track
 	Shuffle       bool
 	RepeatMode    string
 }
@@ -32,9 +33,9 @@ type QueueState struct {
 // NewQueue creates a queue with default settings.
 func NewQueue() *Queue {
 	return &Queue{
-		priorityQueue: []Track{},
-		queue:         []Track{},
-		history:       []Track{},
+		priorityQueue: []types.Track{},
+		queue:         []types.Track{},
+		history:       []types.Track{},
 		RepeatMode:    "Off",
 	}
 }
@@ -42,18 +43,18 @@ func NewQueue() *Queue {
 // PlayTracks sets up playback from a track list starting at startIdx.
 // If shuffle is enabled, remaining tracks are shuffled.
 // Returns the selected track.
-func (q *Queue) PlayTracks(tracks []Track, startIdx int) Track {
+func (q *Queue) PlayTracks(tracks []types.Track, startIdx int) types.Track {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
 	// Starting fresh playback always clears the user-managed priority queue.
-	q.priorityQueue = []Track{}
+	q.priorityQueue = []types.Track{}
 
 	selected := tracks[startIdx]
-	q.originalTracks = append([]Track{}, tracks...)
+	q.originalTracks = append([]types.Track{}, tracks...)
 
 	if q.Shuffle {
-		rest := make([]Track, 0, len(tracks)-1)
+		rest := make([]types.Track, 0, len(tracks)-1)
 		for i, t := range tracks {
 			if i != startIdx {
 				rest = append(rest, t)
@@ -61,10 +62,10 @@ func (q *Queue) PlayTracks(tracks []Track, startIdx int) Track {
 		}
 		rand.Shuffle(len(rest), func(i, j int) { rest[i], rest[j] = rest[j], rest[i] })
 		q.queue = rest
-		q.history = []Track{}
+		q.history = []types.Track{}
 	} else {
-		q.history = append([]Track{}, tracks[:startIdx]...)
-		q.queue = append([]Track{}, tracks[startIdx+1:]...)
+		q.history = append([]types.Track{}, tracks[:startIdx]...)
+		q.queue = append([]types.Track{}, tracks[startIdx+1:]...)
 	}
 
 	q.currentTrack = &selected
@@ -75,7 +76,7 @@ func (q *Queue) PlayTracks(tracks []Track, startIdx int) Track {
 // Priority-queued tracks (explicitly added by the user) are consumed first,
 // then the context queue. Pushes the current track to history.
 // On empty queue: Repeat All rebuilds from history, Repeat Off returns nil.
-func (q *Queue) Next() *Track {
+func (q *Queue) Next() *types.Track {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -97,8 +98,8 @@ func (q *Queue) Next() *Track {
 
 	if len(q.queue) == 0 {
 		if q.RepeatMode == "All" && len(q.history) > 0 {
-			all := append([]Track{}, q.history...)
-			q.history = []Track{}
+			all := append([]types.Track{}, q.history...)
+			q.history = []types.Track{}
 			if q.Shuffle {
 				rand.Shuffle(len(all), func(i, j int) { all[i], all[j] = all[j], all[i] })
 			}
@@ -120,7 +121,7 @@ func (q *Queue) Next() *Track {
 // Previous goes back to the previous track.
 // Pops from history and pushes the current track to the front of the queue.
 // Returns nil if history is empty.
-func (q *Queue) Previous() *Track {
+func (q *Queue) Previous() *types.Track {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -132,7 +133,7 @@ func (q *Queue) Previous() *Track {
 	q.history = q.history[:len(q.history)-1]
 
 	if q.currentTrack != nil {
-		q.queue = append([]Track{*q.currentTrack}, q.queue...)
+		q.queue = append([]types.Track{*q.currentTrack}, q.queue...)
 	}
 
 	q.currentTrack = &prev
@@ -142,7 +143,7 @@ func (q *Queue) Previous() *Track {
 // OnTrackEnd handles the natural end of a track.
 // Repeat One: returns the current track without modifying state.
 // Otherwise: delegates to Next().
-func (q *Queue) OnTrackEnd() *Track {
+func (q *Queue) OnTrackEnd() *types.Track {
 	q.mu.RLock()
 	repeat := q.RepeatMode
 	current := q.currentTrack
@@ -157,7 +158,7 @@ func (q *Queue) OnTrackEnd() *Track {
 
 // Add appends a track to the priority queue (user-managed).
 // Priority tracks play before context tracks, in the order they were added.
-func (q *Queue) Add(track Track) {
+func (q *Queue) Add(track types.Track) {
 	q.mu.Lock()
 	q.priorityQueue = append(q.priorityQueue, track)
 	q.mu.Unlock()
@@ -166,20 +167,20 @@ func (q *Queue) Add(track Track) {
 // Clear empties both the priority queue and the context queue.
 func (q *Queue) Clear() {
 	q.mu.Lock()
-	q.priorityQueue = []Track{}
-	q.queue = []Track{}
+	q.priorityQueue = []types.Track{}
+	q.queue = []types.Track{}
 	q.mu.Unlock()
 }
 
 // SetCurrent sets the current track (called after mpv loads the file).
-func (q *Queue) SetCurrent(track Track) {
+func (q *Queue) SetCurrent(track types.Track) {
 	q.mu.Lock()
 	q.currentTrack = &track
 	q.mu.Unlock()
 }
 
 // Current returns the current track, or nil.
-func (q *Queue) Current() *Track {
+func (q *Queue) Current() *types.Track {
 	q.mu.RLock()
 	defer q.mu.RUnlock()
 	return q.currentTrack
@@ -209,8 +210,8 @@ func (q *Queue) SetShuffle(on bool) {
 			}
 		}
 		if currentIdx >= 0 {
-			q.history = append([]Track{}, q.originalTracks[:currentIdx]...)
-			q.queue = append([]Track{}, q.originalTracks[currentIdx+1:]...)
+			q.history = append([]types.Track{}, q.originalTracks[:currentIdx]...)
+			q.queue = append([]types.Track{}, q.originalTracks[currentIdx+1:]...)
 		}
 	}
 	q.mu.Unlock()
@@ -226,7 +227,7 @@ func (q *Queue) SetRepeatMode(mode string) {
 // TemporaryQueue returns the full playback context in order:
 // history + [currentTrack] + priorityQueue + queue.
 // This matches the frontend's TemporaryQueue format used for display and navigation.
-func (q *Queue) TemporaryQueue() []Track {
+func (q *Queue) TemporaryQueue() []types.Track {
 	q.mu.RLock()
 	defer q.mu.RUnlock()
 
@@ -234,7 +235,7 @@ func (q *Queue) TemporaryQueue() []Track {
 	if q.currentTrack != nil {
 		total++
 	}
-	tq := make([]Track, 0, total)
+	tq := make([]types.Track, 0, total)
 	tq = append(tq, q.history...)
 	if q.currentTrack != nil {
 		tq = append(tq, *q.currentTrack)
@@ -264,9 +265,9 @@ func (q *Queue) State() QueueState {
 	defer q.mu.RUnlock()
 	return QueueState{
 		CurrentTrack:  q.currentTrack,
-		PriorityQueue: append([]Track{}, q.priorityQueue...),
-		Queue:         append([]Track{}, q.queue...),
-		History:       append([]Track{}, q.history...),
+		PriorityQueue: append([]types.Track{}, q.priorityQueue...),
+		Queue:         append([]types.Track{}, q.queue...),
+		History:       append([]types.Track{}, q.history...),
 		Shuffle:       q.Shuffle,
 		RepeatMode:    q.RepeatMode,
 	}

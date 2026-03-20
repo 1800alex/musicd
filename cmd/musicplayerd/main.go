@@ -34,39 +34,25 @@ import (
 	"syscall"
 	"time"
 
+	libMPV "musicd/lib/player/mpv"
+	libQueue "musicd/lib/player/queue"
+	libStream "musicd/lib/player/stream"
+	"musicd/lib/types"
+
 	"github.com/gorilla/websocket"
 )
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-// Track mirrors the server's Track type.
-type Track struct {
-	ID                  string  `json:"id"`
-	Filename            string  `json:"filename"`
-	Title               string  `json:"title"`
-	Artist              string  `json:"artist"`
-	Album               string  `json:"album"`
-	Year                int     `json:"year"`
-	FilePath            string  `json:"file_path"`
-	CoverArtID          string  `json:"cover_art_id"`
-	Duration            string  `json:"duration"`
-	DurationSec         float64 `json:"duration_seconds"`
-	PlaylistPositionID  string  `json:"playlist_position_id"` // Unique ID per playlist position (empty for non-playlist contexts)
-}
-
 // Config holds all daemon configuration from environment variables.
 type Config struct {
-	MusicdURL      string
-	SessionName    string
-	StateDir       string
-	AudioDevice    string
-	InitialVolume  float64
-	MpvSocket      string
-	StreamEnabled  bool
-	StreamRTPDest  string
-	StreamHTTPPort string
-	StreamFormat   string
-	StreamBitrate  string
+	MusicdURL     string
+	SessionName   string
+	StateDir      string
+	AudioDevice   string
+	InitialVolume float64
+	MpvSocket     string
+	Stream        libStream.Config
 }
 
 func loadConfig() Config {
@@ -114,17 +100,19 @@ func loadConfig() Config {
 	}
 
 	return Config{
-		MusicdURL:      musicdURL,
-		SessionName:    sessionName,
-		StateDir:       stateDir,
-		AudioDevice:    audioDevice,
-		InitialVolume:  volume,
-		MpvSocket:      mpvSocket,
-		StreamEnabled:  os.Getenv("STREAM_ENABLED") == "true",
-		StreamRTPDest:  os.Getenv("STREAM_RTP_DEST"),
-		StreamHTTPPort: os.Getenv("STREAM_HTTP_PORT"),
-		StreamFormat:   streamFormat,
-		StreamBitrate:  streamBitrate,
+		MusicdURL:     musicdURL,
+		SessionName:   sessionName,
+		StateDir:      stateDir,
+		AudioDevice:   audioDevice,
+		InitialVolume: volume,
+		MpvSocket:     mpvSocket,
+		Stream: libStream.Config{
+			Enabled:  os.Getenv("STREAM_ENABLED") == "true",
+			RTPDest:  os.Getenv("STREAM_RTP_DEST"),
+			HTTPPort: os.Getenv("STREAM_HTTP_PORT"),
+			Format:   streamFormat,
+			Bitrate:  streamBitrate,
+		},
 	}
 }
 
@@ -133,10 +121,10 @@ func loadConfig() Config {
 // Daemon is the music player daemon.
 type Daemon struct {
 	cfg       Config
-	mpv       *MpvClient
-	streams   *StreamManager
+	mpv       *libMPV.MpvClient
+	streams   *libStream.StreamManager
 	sessionID string
-	q         *Queue
+	q         *libQueue.Queue
 
 	// WebSocket
 	wsConn *websocket.Conn
@@ -156,10 +144,10 @@ func main() {
 	cfg := loadConfig()
 
 	// Set up streaming before mpv so we can route mpv to the virtual sink.
-	var streams *StreamManager
+	var streams *libStream.StreamManager
 	audioDevice := cfg.AudioDevice
-	if cfg.StreamEnabled {
-		streams = NewStreamManager(cfg)
+	if cfg.Stream.Enabled {
+		streams = libStream.NewStreamManager(cfg.Stream)
 		if err := streams.Start(); err != nil {
 			log.Printf("Warning: streaming failed to start: %v", err)
 			streams = nil
@@ -170,7 +158,7 @@ func main() {
 		}
 	}
 
-	mpv := NewMpvClient(cfg.MpvSocket, audioDevice, cfg.InitialVolume)
+	mpv := libMPV.New(cfg.MpvSocket, audioDevice, cfg.InitialVolume)
 	if err := mpv.Start(); err != nil {
 		log.Fatalf("Failed to start mpv: %v", err)
 	}
@@ -182,7 +170,7 @@ func main() {
 	d := &Daemon{
 		cfg:       cfg,
 		mpv:       mpv,
-		q:         NewQueue(),
+		q:         libQueue.NewQueue(),
 		streams:   streams,
 		sessionID: loadSessionID(cfg.StateDir),
 		volume:    cfg.InitialVolume,
@@ -492,7 +480,7 @@ func (d *Daemon) cmdPlayTrack(id, search string) {
 			log.Printf("fetchTrack %s: %v", id, err)
 			return
 		}
-		d.q.PlayTracks([]Track{track}, 0)
+		d.q.PlayTracks([]types.Track{track}, 0)
 		d.playTrack(track)
 		return
 	}
@@ -588,7 +576,7 @@ func (d *Daemon) loadAndPlayFromPlaylist(apiPath, trackID, playlistPositionID, s
 }
 
 // playTrack tells mpv to play a track. Queue state is already set by the caller.
-func (d *Daemon) playTrack(track Track) {
+func (d *Daemon) playTrack(track types.Track) {
 	d.mu.Lock()
 	d.isPlaying = true
 	d.currentTime = 0
@@ -716,22 +704,22 @@ func (d *Daemon) stateBroadcaster(stop chan struct{}) {
 
 // ── API helpers ──────────────────────────────────────────────────────────────
 
-func (d *Daemon) fetchTrack(id string) (Track, error) {
+func (d *Daemon) fetchTrack(id string) (types.Track, error) {
 	resp, err := http.Get(d.cfg.MusicdURL + "/api/track/" + id)
 	if err != nil {
-		return Track{}, err
+		return types.Track{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return Track{}, fmt.Errorf("HTTP %d", resp.StatusCode)
+		return types.Track{}, fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
-	var t Track
+	var t types.Track
 	return t, json.NewDecoder(resp.Body).Decode(&t)
 }
 
 // fetchTracks fetches all tracks from a paginated API endpoint.
-func (d *Daemon) fetchTracks(apiPath string) ([]Track, error) {
-	var all []Track
+func (d *Daemon) fetchTracks(apiPath string) ([]types.Track, error) {
+	var all []types.Track
 	for page := 1; ; page++ {
 		sep := "?"
 		if strings.Contains(apiPath, "?") {
@@ -752,7 +740,7 @@ func (d *Daemon) fetchTracks(apiPath string) ([]Track, error) {
 		}
 
 		// Try flat array first (used by artist/album endpoints).
-		var arr []Track
+		var arr []types.Track
 		if json.Unmarshal(body, &arr) == nil {
 			all = append(all, arr...)
 			break
@@ -760,8 +748,8 @@ func (d *Daemon) fetchTracks(apiPath string) ([]Track, error) {
 
 		// Paginated object with "data" field.
 		var paged struct {
-			Data       []Track `json:"data"`
-			TotalPages int     `json:"totalPages"`
+			Data       []types.Track `json:"data"`
+			TotalPages int           `json:"totalPages"`
 		}
 		if err := json.Unmarshal(body, &paged); err != nil {
 			return nil, fmt.Errorf("decode response: %w", err)

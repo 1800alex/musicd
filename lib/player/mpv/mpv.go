@@ -1,4 +1,4 @@
-package main
+package mpv
 
 import (
 	"bufio"
@@ -34,8 +34,8 @@ type MpvClient struct {
 	OnTrackEnd func(reason, fileError string) // reason: "eof", "error", "stop"; fileError: mpv error string
 }
 
-// NewMpvClient creates a new mpv IPC client. Call Start() to launch the process.
-func NewMpvClient(socketPath, audioDevice string, volume float64) *MpvClient {
+// New creates a new mpv IPC client. Call Start() to launch the process.
+func New(socketPath, audioDevice string, volume float64) *MpvClient {
 	return &MpvClient{
 		socketPath:  socketPath,
 		audioDevice: audioDevice,

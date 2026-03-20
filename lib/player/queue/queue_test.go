@@ -1,16 +1,17 @@
-package main
+package queue
 
 import (
 	"fmt"
+	"musicd/lib/types"
 	"testing"
 )
 
 // makeTracks returns n tracks with IDs "1".."n" and titles "Track 1".."Track n".
-func makeTracks(n int) []Track {
-	tracks := make([]Track, n)
+func makeTracks(n int) []types.Track {
+	tracks := make([]types.Track, n)
 	for i := range tracks {
 		id := fmt.Sprintf("%d", i+1)
-		tracks[i] = Track{
+		tracks[i] = types.Track{
 			ID:    id,
 			Title: "Track " + id,
 		}
@@ -18,7 +19,7 @@ func makeTracks(n int) []Track {
 	return tracks
 }
 
-func trackIDs(tracks []Track) []string {
+func trackIDs(tracks []types.Track) []string {
 	ids := make([]string, len(tracks))
 	for i, t := range tracks {
 		ids[i] = t.ID
@@ -26,7 +27,7 @@ func trackIDs(tracks []Track) []string {
 	return ids
 }
 
-func containsAll(tracks []Track, ids []string) bool {
+func containsAll(tracks []types.Track, ids []string) bool {
 	have := map[string]bool{}
 	for _, t := range tracks {
 		have[t.ID] = true
@@ -437,7 +438,7 @@ func TestAdd(t *testing.T) {
 	tracks := makeTracks(2)
 	q.PlayTracks(tracks, 0) // Current=1, Queue=[2]
 
-	extra := Track{ID: "99", Title: "Extra"}
+	extra := types.Track{ID: "99", Title: "Extra"}
 	q.Add(extra)
 
 	qIDs := trackIDs(q.queue)

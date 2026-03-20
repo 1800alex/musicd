@@ -16,7 +16,7 @@ help:
 	@echo "  test-e2e-report - Open HTML report from last e2e run"
 	@echo "  clean        - Clean build artifacts"
 	@echo "  build-player - Build the musicplayerd daemon"
-	@echo "  run-player   - Run musicplayerd locally"
+	@echo "  build-tui    - Build the musictui TUI remote control"
 	@echo "  cap-build    - Build frontend and sync to iOS/Android"
 	@echo "  cap-sync     - Sync web assets to native platforms"
 	@echo "  cap-open-ios - Open iOS project in Xcode"
@@ -84,10 +84,11 @@ build-player:
 	@mkdir -p ./bin
 	go build -o ./bin/musicplayerd ./cmd/musicplayerd
 
-# Run musicplayerd locally
-.PHONY: run-player
-run-player:
-	go run ./cmd/musicplayerd
+# Build the musictui TUI remote control
+.PHONY: build-tui
+build-tui:
+	@mkdir -p ./bin
+	go build -o ./bin/musictui ./cmd/musictui
 
 # Run the application locally
 .PHONY: run

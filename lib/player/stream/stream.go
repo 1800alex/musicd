@@ -1,4 +1,4 @@
-package main
+package stream
 
 import (
 	"fmt"
@@ -9,6 +9,14 @@ import (
 )
 
 const streamSinkName = "musicplayerd_sink"
+
+type Config struct {
+	Enabled  bool
+	RTPDest  string
+	HTTPPort string
+	Format   string
+	Bitrate  string
+}
 
 // StreamManager manages FFmpeg processes that capture audio from a dedicated
 // PulseAudio null sink and stream it via RTP and/or HTTP.
@@ -46,12 +54,12 @@ func (s *StreamManager) Start() error {
 
 	monitorSource := streamSinkName + ".monitor"
 
-	if s.cfg.StreamRTPDest != "" {
+	if s.cfg.RTPDest != "" {
 		if err := s.startRTP(monitorSource); err != nil {
 			return fmt.Errorf("rtp stream: %w", err)
 		}
 	}
-	if s.cfg.StreamHTTPPort != "" {
+	if s.cfg.HTTPPort != "" {
 		if err := s.startHTTP(monitorSource); err != nil {
 			return fmt.Errorf("http stream: %w", err)
 		}
@@ -126,13 +134,13 @@ func (s *StreamManager) startRTP(source string) error {
 		"-f", "pulse",
 		"-i", source,
 		"-acodec", codec,
-		"-ab", s.cfg.StreamBitrate,
+		"-ab", s.cfg.Bitrate,
 		"-f", "rtp",
 	}
 	if muxer != "" {
 		args = append(args, "-muxer_options", muxer)
 	}
-	args = append(args, s.cfg.StreamRTPDest)
+	args = append(args, s.cfg.RTPDest)
 
 	s.rtpCmd = exec.Command("ffmpeg", args...)
 	s.rtpCmd.Stdout = os.Stdout
@@ -141,7 +149,7 @@ func (s *StreamManager) startRTP(source string) error {
 	if err := s.rtpCmd.Start(); err != nil {
 		return err
 	}
-	log.Printf("RTP stream started → %s (codec=%s bitrate=%s source=%s)", s.cfg.StreamRTPDest, codec, s.cfg.StreamBitrate, source)
+	log.Printf("RTP stream started → %s (codec=%s bitrate=%s source=%s)", s.cfg.RTPDest, codec, s.cfg.Bitrate, source)
 	return nil
 }
 
@@ -149,14 +157,14 @@ func (s *StreamManager) startRTP(source string) error {
 // FFmpeg's -listen 1 creates a simple single-client HTTP server.
 func (s *StreamManager) startHTTP(source string) error {
 	codec, _ := s.codecArgs()
-	listenURL := fmt.Sprintf("http://0.0.0.0:%s/stream", s.cfg.StreamHTTPPort)
+	listenURL := fmt.Sprintf("http://0.0.0.0:%s/stream", s.cfg.HTTPPort)
 	contentType := s.contentType()
 
 	args := []string{
 		"-f", "pulse",
 		"-i", source,
 		"-acodec", codec,
-		"-ab", s.cfg.StreamBitrate,
+		"-ab", s.cfg.Bitrate,
 		"-f", s.outputFormat(),
 		"-content_type", contentType,
 		"-listen", "1",
@@ -170,13 +178,13 @@ func (s *StreamManager) startHTTP(source string) error {
 	if err := s.httpCmd.Start(); err != nil {
 		return err
 	}
-	log.Printf("HTTP stream started → %s (codec=%s bitrate=%s source=%s)", listenURL, codec, s.cfg.StreamBitrate, source)
+	log.Printf("HTTP stream started → %s (codec=%s bitrate=%s source=%s)", listenURL, codec, s.cfg.Bitrate, source)
 	return nil
 }
 
 // codecArgs returns the FFmpeg codec name and optional muxer options for the configured format.
 func (s *StreamManager) codecArgs() (codec string, muxerOpts string) {
-	switch s.cfg.StreamFormat {
+	switch s.cfg.Format {
 	case "opus":
 		return "libopus", ""
 	case "aac":
@@ -190,7 +198,7 @@ func (s *StreamManager) codecArgs() (codec string, muxerOpts string) {
 
 // outputFormat returns the FFmpeg output format for HTTP streaming.
 func (s *StreamManager) outputFormat() string {
-	switch s.cfg.StreamFormat {
+	switch s.cfg.Format {
 	case "opus":
 		return "ogg"
 	case "aac":
@@ -204,7 +212,7 @@ func (s *StreamManager) outputFormat() string {
 
 // contentType returns the MIME type for the HTTP stream.
 func (s *StreamManager) contentType() string {
-	switch s.cfg.StreamFormat {
+	switch s.cfg.Format {
 	case "opus":
 		return "audio/ogg"
 	case "aac":
