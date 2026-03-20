@@ -1,19 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"musicd/lib/types"
 )
-
-// APIResponse is the paginated envelope for list endpoints.
-type APIResponse struct {
-	Data       json.RawMessage `json:"data"`
-	Page       int             `json:"page"`
-	PageSize   int             `json:"pageSize"`
-	TotalPages int             `json:"totalPages"`
-	Total      int             `json:"total"`
-	Search     string          `json:"search"`
-}
 
 // PlayerState is the deserialized WebSocket state broadcast.
 type PlayerState struct {

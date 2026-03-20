@@ -1969,16 +1969,6 @@ func albumTracksHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(tracks)
 }
 
-// API Response structures
-type APIResponse struct {
-	Data       interface{} `json:"data"`
-	Page       int         `json:"page"`
-	PageSize   int         `json:"pageSize"`
-	TotalPages int         `json:"totalPages"`
-	Search     string      `json:"search"`
-	Total      int         `json:"total"`
-}
-
 // Frontend handler
 func apiCoverArtHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -2172,7 +2162,7 @@ func apiTracksHandler(w http.ResponseWriter, r *http.Request) {
 		tracks = append(tracks, track)
 	}
 
-	response := APIResponse{
+	response := types.APIResponse{
 		Data:       tracks,
 		Page:       page,
 		PageSize:   pageSize,
@@ -2879,7 +2869,7 @@ func apiArtistsHandler(w http.ResponseWriter, r *http.Request) {
 		pageArtists = append(pageArtists, artist)
 	}
 
-	response := APIResponse{
+	response := types.APIResponse{
 		Data:       pageArtists,
 		Page:       page,
 		PageSize:   pageSize,
