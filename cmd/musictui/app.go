@@ -228,6 +228,24 @@ func (a *App) seekRelative(delta float64) {
 	a.SendCommand("seek", newPos)
 }
 
+// GetInterpolatedProgress returns the interpolated playback position and duration.
+func (a *App) GetInterpolatedProgress() (currentTime, duration float64) {
+	a.progress.Mu.Lock()
+	cur := a.progress.Time
+	dur := a.progress.Dur
+	playing := a.progress.Playing
+	lastUpd := a.progress.LastUpd
+	a.progress.Mu.Unlock()
+
+	if playing && dur > 0 {
+		cur += time.Since(lastUpd).Seconds()
+		if cur > dur {
+			cur = dur
+		}
+	}
+	return cur, dur
+}
+
 // progressTicker runs a 100ms ticker that interpolates the current playback
 // position between server state updates, keeping the progress bar smooth.
 func (a *App) progressTicker() {
@@ -236,21 +254,10 @@ func (a *App) progressTicker() {
 	for {
 		select {
 		case <-ticker.C:
-			a.progress.Mu.Lock()
-			cur := a.progress.Time
-			dur := a.progress.Dur
-			playing := a.progress.Playing
-			lastUpd := a.progress.LastUpd
-			a.progress.Mu.Unlock()
+			interpolated, dur := a.GetInterpolatedProgress()
 
-			if !playing || dur <= 0 {
+			if dur <= 0 {
 				continue
-			}
-
-			elapsed := time.Since(lastUpd).Seconds()
-			interpolated := cur + elapsed
-			if interpolated > dur {
-				interpolated = dur
 			}
 
 			a.tviewApp.QueueUpdateDraw(func() {
@@ -259,6 +266,12 @@ func (a *App) progressTicker() {
 				a.stateMu.RUnlock()
 				if st != nil {
 					a.statusBar.Update(st, interpolated)
+				}
+				// Update now playing page time display
+				if a.currentPage == "nowplaying" {
+					if page, ok := a.pageMap["nowplaying"]; ok {
+						page.Load()
+					}
 				}
 			})
 		case <-a.progress.tickerStop:

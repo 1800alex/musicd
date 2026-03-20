@@ -90,10 +90,7 @@ func (p *NowPlayingPage) Load() {
 		info += fmt.Sprintf(" [gray](%d)[-]", t.Year)
 	}
 	// Use interpolated progress for smooth time display
-	p.app.progress.Mu.Lock()
-	currentTime := p.app.progress.Time
-	duration := p.app.progress.Dur
-	p.app.progress.Mu.Unlock()
+	currentTime, duration := p.app.GetInterpolatedProgress()
 
 	info += fmt.Sprintf("\n\n  %s  %s / %s",
 		playState,
