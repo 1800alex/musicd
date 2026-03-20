@@ -2,6 +2,7 @@ package main
 
 import (
 	"sync"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -11,6 +12,15 @@ import (
 type Page interface {
 	tview.Primitive
 	Load()
+}
+
+type InterpolatedProgress struct {
+	Time       float64   // current interpolated time in seconds
+	Dur        float64   // total duration
+	Playing    bool      // whether playback is active
+	LastUpd    time.Time // when we last corrected from server
+	Mu         sync.Mutex
+	tickerStop chan struct{}
 }
 
 // App is the main application shell.
@@ -26,6 +36,9 @@ type App struct {
 	state    *PlayerState
 	stateMu  sync.RWMutex
 	pageSize int
+
+	// Interpolated progress tracking
+	progress InterpolatedProgress
 
 	history     []string
 	currentPage string
@@ -63,6 +76,9 @@ func NewApp(serverURL string, pageSize int) *App {
 
 	a.setupGlobalKeys()
 	a.tviewApp.SetRoot(a.layout, true)
+
+	a.progress.tickerStop = make(chan struct{})
+	go a.progressTicker()
 
 	return a
 }
@@ -159,7 +175,7 @@ func (a *App) DisconnectSession() {
 	a.state = nil
 	a.stateMu.Unlock()
 	a.tviewApp.QueueUpdateDraw(func() {
-		a.statusBar.Update(nil)
+		a.statusBar.Update(nil, 0)
 	})
 }
 
@@ -168,8 +184,16 @@ func (a *App) onStateUpdate(state PlayerState) {
 	a.state = &state
 	a.stateMu.Unlock()
 
+	// Correct interpolated progress from server state
+	a.progress.Mu.Lock()
+	a.progress.Time = state.CurrentTime
+	a.progress.Dur = state.Duration
+	a.progress.Playing = state.IsPlaying
+	a.progress.LastUpd = time.Now()
+	a.progress.Mu.Unlock()
+
 	a.tviewApp.QueueUpdateDraw(func() {
-		a.statusBar.Update(&state)
+		a.statusBar.Update(&state, state.CurrentTime)
 
 		// Update queue page if visible
 		if a.currentPage == "queue" {
@@ -178,6 +202,62 @@ func (a *App) onStateUpdate(state PlayerState) {
 			}
 		}
 	})
+}
+
+// seekRelative seeks forward or backward by the given number of seconds.
+func (a *App) seekRelative(delta float64) {
+	a.progress.Mu.Lock()
+	newPos := a.progress.Time + delta
+	if newPos < 0 {
+		newPos = 0
+	}
+	if a.progress.Dur > 0 && newPos > a.progress.Dur {
+		newPos = a.progress.Dur
+	}
+	a.progress.Time = newPos
+	a.progress.LastUpd = time.Now()
+	a.progress.Mu.Unlock()
+
+	a.SendCommand("seek", newPos)
+}
+
+// progressTicker runs a 100ms ticker that interpolates the current playback
+// position between server state updates, keeping the progress bar smooth.
+func (a *App) progressTicker() {
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			a.progress.Mu.Lock()
+			cur := a.progress.Time
+			dur := a.progress.Dur
+			playing := a.progress.Playing
+			lastUpd := a.progress.LastUpd
+			a.progress.Mu.Unlock()
+
+			if !playing || dur <= 0 {
+				continue
+			}
+
+			elapsed := time.Since(lastUpd).Seconds()
+			interpolated := cur + elapsed
+			if interpolated > dur {
+				interpolated = dur
+			}
+
+			a.tviewApp.QueueUpdateDraw(func() {
+				a.stateMu.RLock()
+				st := a.state
+				a.stateMu.RUnlock()
+				if st != nil {
+					a.statusBar.Update(st, interpolated)
+				}
+			})
+		case <-a.progress.tickerStop:
+			return
+		}
+	}
 }
 
 func (a *App) isInputFocused() bool {
@@ -203,6 +283,18 @@ func (a *App) setupGlobalKeys() {
 				return nil
 			case 'N':
 				a.SendCommand("previous", nil)
+				return nil
+			case 'f':
+				a.seekRelative(10)
+				return nil
+			case 'F':
+				a.seekRelative(30)
+				return nil
+			case 'b':
+				a.seekRelative(-10)
+				return nil
+			case 'B':
+				a.seekRelative(-30)
 				return nil
 			case '+', '=':
 				a.stateMu.RLock()
@@ -302,6 +394,8 @@ func (a *App) showHelp() {
   Space    Play/Pause
   n        Next track
   N        Previous track
+  f/b      Seek forward/back 10s
+  F/B      Seek forward/back 30s
   +/-      Volume up/down
   m        Mute
   s        Shuffle

@@ -48,7 +48,8 @@ func NewStatusBar() *StatusBar {
 }
 
 // Update refreshes the status bar from a player state.
-func (s *StatusBar) Update(state *PlayerState) {
+// currentTime is the interpolated playback position in seconds.
+func (s *StatusBar) Update(state *PlayerState, currentTime float64) {
 	if state == nil {
 		s.trackInfo.SetText(" [gray]No session connected")
 		s.progress.SetText("")
@@ -69,13 +70,13 @@ func (s *StatusBar) Update(state *PlayerState) {
 	}
 
 	// Progress bar
-	currentStr := formatDuration(state.CurrentTime)
+	currentStr := formatDuration(currentTime)
 	durationStr := formatDuration(state.Duration)
 
 	barWidth := 20
 	filled := 0
 	if state.Duration > 0 {
-		filled = int(float64(state.CurrentTime) / float64(state.Duration) * float64(barWidth))
+		filled = int(currentTime / state.Duration * float64(barWidth))
 		if filled > barWidth {
 			filled = barWidth
 		}
