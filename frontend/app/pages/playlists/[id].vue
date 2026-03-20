@@ -181,9 +181,7 @@ const handleAddToPlaylist = async (track: Track, targetPlaylistName: string) => 
 			pageSize: 10000
 		});
 
-		const isDuplicate = playlistTracks.data.some(
-			(t) => t.id === track.id
-		);
+		const isDuplicate = playlistTracks.data.some((t) => t.id === track.id);
 
 		if (isDuplicate) {
 			// Show confirmation modal for duplicate
@@ -473,7 +471,9 @@ watch(
 					<button class="delete" @click="cancelRemoveTrack"></button>
 				</header>
 				<section class="modal-card-body">
-					<p>Are you sure you want to remove <strong>{{ trackToRemove.title }}</strong> from this playlist?</p>
+					<p>
+						Are you sure you want to remove <strong>{{ trackToRemove.title }}</strong> from this playlist?
+					</p>
 				</section>
 				<footer class="modal-card-foot">
 					<button class="button" @click="cancelRemoveTrack">Cancel</button>

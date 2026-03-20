@@ -44,7 +44,9 @@ class PlayerService {
 
 		// If current track has a playlist_position_id, use that for comparison (handles duplicates)
 		if (currentTrack.playlist_position_id) {
-			return this.appState.TemporaryQueue.findIndex((t) => t.playlist_position_id === currentTrack.playlist_position_id);
+			return this.appState.TemporaryQueue.findIndex(
+				(t) => t.playlist_position_id === currentTrack.playlist_position_id
+			);
 		}
 
 		// Otherwise, fall back to using track id

@@ -253,7 +253,10 @@ onMounted(async () => {
 					<button class="delete" @click="cancelDeletePlaylist"></button>
 				</header>
 				<section class="modal-card-body">
-					<p>Are you sure you want to delete <strong>{{ playlistToDelete.name }}</strong>?</p>
+					<p>
+						Are you sure you want to delete <strong>{{ playlistToDelete.name }}</strong
+						>?
+					</p>
 					<p class="has-text-grey mt-2"><small>This action cannot be undone.</small></p>
 				</section>
 				<footer class="modal-card-foot">

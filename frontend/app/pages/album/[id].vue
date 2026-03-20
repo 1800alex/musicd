@@ -355,7 +355,8 @@ watch(
 									}}</a>
 								</p>
 								<p class="subtitle is-5 artist-info" :style="{ color: palette.text, opacity: 0.8 }">
-									{{ album.year || "Unknown Year" }} • {{ album.track_count || album.tracks?.length || 0 }} track{{
+									{{ album.year || "Unknown Year" }} •
+									{{ album.track_count || album.tracks?.length || 0 }} track{{
 										(album.track_count || album.tracks?.length || 0) !== 1 ? "s" : ""
 									}}
 								</p>
