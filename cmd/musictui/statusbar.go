@@ -75,7 +75,7 @@ func (s *StatusBar) Update(state *PlayerState) {
 	barWidth := 20
 	filled := 0
 	if state.Duration > 0 {
-		filled = int((state.CurrentTime / state.Duration) * float64(barWidth))
+		filled = int(float64(state.CurrentTime/state.Duration) * float64(barWidth))
 		if filled > barWidth {
 			filled = barWidth
 		}
@@ -110,7 +110,7 @@ func (s *StatusBar) Update(state *PlayerState) {
 	s.controls.SetText(fmt.Sprintf("%s%s%s  %s ", playIcon, shuffleStr, repeatStr, volStr))
 }
 
-func formatDuration(seconds float64) string {
+func formatDuration[T float64 | int](seconds T) string {
 	total := int(seconds)
 	m := total / 60
 	s := total % 60

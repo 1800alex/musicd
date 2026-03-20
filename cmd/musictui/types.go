@@ -20,8 +20,8 @@ type PlayerState struct {
 	Type            string                 `json:"type"`
 	IsPlaying       bool                   `json:"is_playing"`
 	CurrentTrack    *types.Track           `json:"current_track"`
-	CurrentTime     float64                `json:"current_time"`
-	Duration        float64                `json:"duration"`
+	CurrentTime     int                    `json:"current_time"`
+	Duration        int                    `json:"duration"`
 	Volume          float64                `json:"volume"`
 	Muted           bool                   `json:"muted"`
 	Shuffle         bool                   `json:"shuffle"`
