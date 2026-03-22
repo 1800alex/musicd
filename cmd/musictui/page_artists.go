@@ -92,6 +92,14 @@ func (p *ArtistsPage) setupKeys() {
 	p.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
+			if p.pagination.Search != "" {
+				p.pagination.ClearSearch()
+				p.Load()
+			} else {
+				p.app.GoBack()
+			}
+			return nil
+		case tcell.KeyBackspace, tcell.KeyBackspace2:
 			p.app.GoBack()
 			return nil
 		case tcell.KeyLeft:

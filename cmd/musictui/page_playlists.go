@@ -119,6 +119,14 @@ func (p *PlaylistsPage) setupKeys() {
 	p.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
+			if p.search != "" {
+				p.search = ""
+				p.applyFilter()
+			} else {
+				p.app.GoBack()
+			}
+			return nil
+		case tcell.KeyBackspace, tcell.KeyBackspace2:
 			p.app.GoBack()
 			return nil
 		case tcell.KeyRune:

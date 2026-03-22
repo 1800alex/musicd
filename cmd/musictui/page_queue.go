@@ -44,7 +44,7 @@ func NewQueuePage(app *App) *QueuePage {
 func (p *QueuePage) setupKeys() {
 	p.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyEscape:
+		case tcell.KeyEscape, tcell.KeyBackspace, tcell.KeyBackspace2:
 			p.app.GoBack()
 			return nil
 		case tcell.KeyRune:
