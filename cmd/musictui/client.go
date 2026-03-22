@@ -109,11 +109,14 @@ func (c *APIClient) GetArtist(id string) (*types.Artist, error) {
 	if err != nil {
 		return nil, err
 	}
-	var artist types.Artist
-	if err := json.Unmarshal(data, &artist); err != nil {
+	// The API wraps the artist under an "artist" key
+	var resp struct {
+		Artist types.Artist `json:"artist"`
+	}
+	if err := json.Unmarshal(data, &resp); err != nil {
 		return nil, fmt.Errorf("decode artist: %w", err)
 	}
-	return &artist, nil
+	return &resp.Artist, nil
 }
 
 // GetAlbum returns album detail with tracks.
@@ -122,10 +125,14 @@ func (c *APIClient) GetAlbum(id string) (*types.Album, error) {
 	if err != nil {
 		return nil, err
 	}
-	var album types.Album
-	if err := json.Unmarshal(data, &album); err != nil {
+	// The API wraps the album under an "album" key
+	var resp struct {
+		Album types.Album `json:"album"`
+	}
+	if err := json.Unmarshal(data, &resp); err != nil {
 		return nil, fmt.Errorf("decode album: %w", err)
 	}
+	album := resp.Album
 	return &album, nil
 }
 
