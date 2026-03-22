@@ -39,7 +39,7 @@ func NewNowPlayingPage(app *App) *NowPlayingPage {
 
 	p.Flex = tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(p.coverImage, 0, 1, false).
-		AddItem(p.trackInfo, 0, 1, false)
+		AddItem(p.trackInfo, 0, 1, true)
 
 	p.setupKeys()
 	return p
