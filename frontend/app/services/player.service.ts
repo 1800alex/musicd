@@ -40,7 +40,9 @@ class PlayerService {
 	/** Find the index of the current track in the queue, handling duplicates via playlist_position_id */
 	private findCurrentTrackIndex(): number {
 		const currentTrack = this.appState.CurrentTrack;
-		if (!currentTrack) return -1;
+		if (!currentTrack) {
+			return -1;
+		}
 
 		// If current track has a playlist_position_id, use that for comparison (handles duplicates)
 		if (currentTrack.playlist_position_id) {
