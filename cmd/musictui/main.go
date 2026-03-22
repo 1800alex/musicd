@@ -15,7 +15,6 @@ func main() {
 	app := NewApp(*url, *pageSize)
 
 	// Register all pages
-	app.RegisterPage("sessions", NewSessionsPage(app))
 	app.RegisterPage("connect", NewConnectPage(app))
 	app.RegisterPage("tracks", NewTracksPage(app))
 	app.RegisterPage("artists", NewArtistsPage(app))
@@ -27,7 +26,7 @@ func main() {
 		app.ConnectToSession(*session, "")
 		app.NavigateTo("tracks")
 	} else {
-		app.NavigateTo("sessions")
+		app.NavigateTo("connect")
 	}
 
 	if err := app.Run(); err != nil {
