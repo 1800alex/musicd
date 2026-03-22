@@ -391,6 +391,7 @@ func (p *ArtistDetailPage) renderAlbumTable() {
 	}
 
 	if len(p.albumEntries) > 0 {
+		p.albumTable.ScrollToBeginning()
 		p.albumTable.Select(p.selectedAlbum+1, 0)
 	}
 }
