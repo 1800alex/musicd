@@ -184,16 +184,21 @@ func (p *TracksPage) Load() {
 func (p *TracksPage) renderTable() {
 	p.table.Clear()
 
-	headers := []string{"#", "Title", "Artist", "Album", "Duration"}
+	currentTrackID := ""
+	if state := p.app.GetState(); state != nil && state.CurrentTrack != nil {
+		currentTrackID = state.CurrentTrack.ID
+	}
+
+	headers := []string{"", "#", "Title", "Artist", "Album", "Duration"}
 	for i, h := range headers {
 		cell := tview.NewTableCell(h).
 			SetTextColor(tcell.ColorYellow).
 			SetSelectable(false).
 			SetExpansion(1)
-		if i == 0 {
+		if i == 0 || i == 1 {
 			cell.SetExpansion(0)
 		}
-		if i == 4 {
+		if i == 5 {
 			cell.SetExpansion(0).SetAlign(tview.AlignRight)
 		}
 		p.table.SetCell(0, i, cell)
@@ -207,15 +212,29 @@ func (p *TracksPage) renderTable() {
 			title = t.Filename
 		}
 
-		p.table.SetCell(row, 0, tview.NewTableCell(fmt.Sprintf("%d", offset+i+1)).
+		indicator := " "
+		textColor := tcell.ColorWhite
+		if t.ID == currentTrackID {
+			indicator = ">"
+			textColor = tcell.ColorGreen
+		}
+
+		p.table.SetCell(row, 0, tview.NewTableCell(indicator).SetTextColor(tcell.ColorGreen))
+		p.table.SetCell(row, 1, tview.NewTableCell(fmt.Sprintf("%d", offset+i+1)).
 			SetTextColor(tcell.ColorGray).SetAlign(tview.AlignRight))
-		p.table.SetCell(row, 1, tview.NewTableCell(title).SetExpansion(1))
-		p.table.SetCell(row, 2, tview.NewTableCell(t.Artist).SetExpansion(1))
-		p.table.SetCell(row, 3, tview.NewTableCell(t.Album).SetExpansion(1))
-		p.table.SetCell(row, 4, tview.NewTableCell(t.Duration).SetAlign(tview.AlignRight))
+		p.table.SetCell(row, 2, tview.NewTableCell(title).SetExpansion(1).SetTextColor(textColor))
+		p.table.SetCell(row, 3, tview.NewTableCell(t.Artist).SetExpansion(1).SetTextColor(textColor))
+		p.table.SetCell(row, 4, tview.NewTableCell(t.Album).SetExpansion(1).SetTextColor(textColor))
+		p.table.SetCell(row, 5, tview.NewTableCell(t.Duration).SetAlign(tview.AlignRight).SetTextColor(textColor))
 	}
 
 	if len(p.tracks) > 0 {
+		for i, t := range p.tracks {
+			if t.ID == currentTrackID {
+				p.table.Select(i+1, 0)
+				return
+			}
+		}
 		p.table.Select(1, 0)
 	}
 }

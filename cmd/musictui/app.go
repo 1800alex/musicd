@@ -191,8 +191,18 @@ func (a *App) DisconnectSession() {
 
 func (a *App) onStateUpdate(state PlayerState) {
 	a.stateMu.Lock()
+	prevTrackID := ""
+	if a.state != nil && a.state.CurrentTrack != nil {
+		prevTrackID = a.state.CurrentTrack.ID
+	}
 	a.state = &state
 	a.stateMu.Unlock()
+
+	newTrackID := ""
+	if state.CurrentTrack != nil {
+		newTrackID = state.CurrentTrack.ID
+	}
+	trackChanged := prevTrackID != newTrackID
 
 	// Correct interpolated progress from server state
 	a.progress.Mu.Lock()
@@ -215,6 +225,36 @@ func (a *App) onStateUpdate(state PlayerState) {
 		if a.currentPage == "nowplaying" {
 			if page, ok := a.pageMap["nowplaying"]; ok {
 				page.Load()
+			}
+		}
+		// Re-render track tables when current track changes,
+		// preserving the user's current selection position.
+		if trackChanged {
+			switch a.currentPage {
+			case "tracks":
+				if p, ok := a.pageMap["tracks"].(*TracksPage); ok {
+					row, _ := p.table.GetSelection()
+					p.renderTable()
+					if row > 0 && row < p.table.GetRowCount() {
+						p.table.Select(row, 0)
+					}
+				}
+			case "artist-detail":
+				if p, ok := a.pageMap["artist-detail"].(*ArtistDetailPage); ok {
+					row, _ := p.trackTable.GetSelection()
+					p.renderTrackTable()
+					if row > 0 && row < p.trackTable.GetRowCount() {
+						p.trackTable.Select(row, 0)
+					}
+				}
+			case "playlist-detail":
+				if p, ok := a.pageMap["playlist-detail"].(*PlaylistDetailPage); ok {
+					row, _ := p.table.GetSelection()
+					p.renderTable()
+					if row > 0 && row < p.table.GetRowCount() {
+						p.table.Select(row, 0)
+					}
+				}
 			}
 		}
 	})

@@ -417,13 +417,18 @@ func (p *ArtistDetailPage) updateAlbumHighlight() {
 func (p *ArtistDetailPage) renderTrackTable() {
 	p.trackTable.Clear()
 
-	headers := []string{"#", "Title", "Album", "Duration"}
+	currentTrackID := ""
+	if state := p.app.GetState(); state != nil && state.CurrentTrack != nil {
+		currentTrackID = state.CurrentTrack.ID
+	}
+
+	headers := []string{"", "#", "Title", "Album", "Duration"}
 	for i, h := range headers {
 		cell := tview.NewTableCell(h).
 			SetTextColor(tcell.ColorYellow).
 			SetSelectable(false).
 			SetExpansion(1)
-		if i == 0 || i == 3 {
+		if i == 0 || i == 1 || i == 4 {
 			cell.SetExpansion(0)
 		}
 		p.trackTable.SetCell(0, i, cell)
@@ -435,15 +440,31 @@ func (p *ArtistDetailPage) renderTrackTable() {
 		if title == "" {
 			title = t.Filename
 		}
-		p.trackTable.SetCell(row, 0, tview.NewTableCell(fmt.Sprintf("%d", i+1)).
+
+		indicator := " "
+		textColor := tcell.ColorWhite
+		if t.ID == currentTrackID {
+			indicator = ">"
+			textColor = tcell.ColorGreen
+		}
+
+		p.trackTable.SetCell(row, 0, tview.NewTableCell(indicator).SetTextColor(tcell.ColorGreen))
+		p.trackTable.SetCell(row, 1, tview.NewTableCell(fmt.Sprintf("%d", i+1)).
 			SetTextColor(tcell.ColorGray).SetAlign(tview.AlignRight))
-		p.trackTable.SetCell(row, 1, tview.NewTableCell(title).SetExpansion(1))
-		p.trackTable.SetCell(row, 2, tview.NewTableCell(t.Album).SetExpansion(1))
-		p.trackTable.SetCell(row, 3, tview.NewTableCell(t.Duration).SetAlign(tview.AlignRight))
+		p.trackTable.SetCell(row, 2, tview.NewTableCell(title).SetExpansion(1).SetTextColor(textColor))
+		p.trackTable.SetCell(row, 3, tview.NewTableCell(t.Album).SetExpansion(1).SetTextColor(textColor))
+		p.trackTable.SetCell(row, 4, tview.NewTableCell(t.Duration).SetAlign(tview.AlignRight).SetTextColor(textColor))
 	}
 
 	if len(p.filteredTracks) > 0 {
 		p.trackTable.SetSelectable(true, false)
+		// Try to select the current track
+		for i, t := range p.filteredTracks {
+			if t.ID == currentTrackID {
+				p.trackTable.Select(i+1, 0)
+				return
+			}
+		}
 		p.trackTable.Select(1, 0)
 	} else {
 		// Disable selection on empty table to prevent tview spin
