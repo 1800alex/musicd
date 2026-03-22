@@ -88,7 +88,6 @@ func (a *App) updateTabBar() {
 		{"1", "Tracks", "tracks"},
 		{"2", "Artists", "artists"},
 		{"3", "Playlists", "playlists"},
-		{"q", "Queue", "queue"},
 		{"p", "Playing", "nowplaying"},
 		{"c", "Connect", "connect"},
 	}
@@ -215,16 +214,6 @@ func (a *App) onStateUpdate(state PlayerState) {
 	a.tviewApp.QueueUpdateDraw(func() {
 		a.statusBar.Update(&state, state.CurrentTime)
 
-		// Update queue page if visible, preserving selection
-		if a.currentPage == "queue" {
-			if p, ok := a.pageMap["queue"].(*QueuePage); ok {
-				row, _ := p.table.GetSelection()
-				p.Load()
-				if row > 0 && row < p.table.GetRowCount() {
-					p.table.Select(row, 0)
-				}
-			}
-		}
 		// Update now playing page if visible
 		if a.currentPage == "nowplaying" {
 			if page, ok := a.pageMap["nowplaying"]; ok {
@@ -434,14 +423,12 @@ func (a *App) setupGlobalKeys() {
 			case 'c':
 				a.NavigateTo("connect")
 				return nil
-			case 'q', '1', '2', '3', 'p':
+			case '1', '2', '3', 'p':
 				// Require an active session for all pages except connect
 				if a.sessionID == "" {
 					return nil
 				}
 				switch event.Rune() {
-				case 'q':
-					a.NavigateTo("queue")
 				case '1':
 					a.NavigateTo("tracks")
 				case '2':
@@ -470,7 +457,6 @@ func (a *App) showHelp() {
 
  [white::b]Navigation[-:-:-]
  1/2/3      Tracks / Artists / Playlists
- q          Queue
  p          Now Playing
  c          Connect / Settings
  Enter/l    Select item

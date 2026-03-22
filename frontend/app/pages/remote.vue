@@ -16,13 +16,15 @@ const { getHTTPURL, getServerHost } = useBackendURL();
 const sessions = ref<any[]>([]);
 const selectedSession = ref<string>("");
 const loading = ref(false);
-const connected = ref(!!appState.RemoteControl);
+const connected = ref(Boolean(appState.RemoteControl));
 
 // UI State
 const showSessionModal = ref(false);
 
 const getSessionIdFromUrl = () => {
-	if (typeof window === "undefined") return "";
+	if ("undefined" === typeof window) {
+		return "";
+	}
 	const params = new URLSearchParams(window.location.search);
 	return params.get("session") || "";
 };
@@ -42,7 +44,9 @@ const fetchSessions = async () => {
 };
 
 const connectToSession = async (sessionId: string) => {
-	if (!sessionId) return;
+	if (!sessionId) {
+		return;
+	}
 
 	try {
 		disconnectSession();
@@ -75,8 +79,10 @@ const connectToSession = async (sessionId: string) => {
 			appState.SetMuted(state.muted);
 			appState.SetShuffle(state.shuffle);
 			appState.SetRepeatMode(state.repeat_mode);
-			appState.SetQueue(state.queue || []);
-			appState.SetTemporaryQueue(state.temporary_queue || []);
+			// Queue arrays are no longer sent in state broadcasts — remote
+			// controllers send commands for navigation and don't need queue data.
+			appState.SetQueue([]);
+			appState.SetTemporaryQueue([]);
 			appState.SetCurrentPlaylist(state.current_playlist || null);
 		};
 

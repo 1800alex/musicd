@@ -224,6 +224,18 @@ func (q *Queue) SetRepeatMode(mode string) {
 	q.mu.Unlock()
 }
 
+// QueueLengths returns the lengths of the priority queue and temporary queue
+// for lightweight state broadcasts.
+func (q *Queue) QueueLengths() (priorityLen, tempLen int) {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+	tempLen = len(q.history) + len(q.priorityQueue) + len(q.queue)
+	if q.currentTrack != nil {
+		tempLen++
+	}
+	return len(q.priorityQueue), tempLen
+}
+
 // TemporaryQueue returns the full playback context in order:
 // history + [currentTrack] + priorityQueue + queue.
 // This matches the frontend's TemporaryQueue format used for display and navigation.

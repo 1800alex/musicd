@@ -12,8 +12,8 @@ interface PlayerState {
 	muted: boolean;
 	shuffle: boolean;
 	repeat_mode: string;
-	queue: any[];
-	temporary_queue: any[];
+	queue_length: number;
+	temporary_queue_length: number;
 	current_playlist: any | null;
 }
 
@@ -66,8 +66,8 @@ export default class RemoteControlService {
 							muted: msg.muted,
 							shuffle: msg.shuffle,
 							repeat_mode: msg.repeat_mode,
-							queue: msg.queue || [],
-							temporary_queue: msg.temporary_queue || [],
+							queue_length: msg.queue_length || 0,
+							temporary_queue_length: msg.temporary_queue_length || 0,
 							current_playlist: msg.current_playlist || null
 						};
 						this.onStateUpdate(state);

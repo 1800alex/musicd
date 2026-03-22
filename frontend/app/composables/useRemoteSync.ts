@@ -143,8 +143,8 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 			muted: appState.Muted,
 			shuffle: appState.Shuffle,
 			repeat_mode: appState.RepeatMode,
-			queue: appState.Queue,
-			temporary_queue: appState.TemporaryQueue,
+			queue_length: appState.Queue.length,
+			temporary_queue_length: appState.TemporaryQueue.length,
 			current_playlist: appState.CurrentPlaylist
 		};
 
@@ -332,8 +332,6 @@ export function useRemoteSync(player: PlayerService, appState: any, audioEl: Ref
 			() => appState.Volume,
 			() => appState.Shuffle,
 			() => appState.RepeatMode,
-			() => appState.Queue,
-			() => appState.TemporaryQueue,
 			() => appState.CurrentPlaylist
 		],
 		() => {

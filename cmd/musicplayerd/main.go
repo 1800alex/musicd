@@ -662,21 +662,21 @@ func (d *Daemon) setCurrentPlaylist(pl map[string]interface{}) {
 
 func (d *Daemon) broadcastState() {
 	qs := d.q.State()
-	tq := d.q.TemporaryQueue()
+	priorityLen, tempLen := d.q.QueueLengths()
 	d.mu.RLock()
 	state := map[string]interface{}{
-		"type":             "state",
-		"is_playing":       d.isPlaying,
-		"current_track":    qs.CurrentTrack,
-		"current_time":     d.currentTime,
-		"duration":         d.duration,
-		"volume":           d.volume,
-		"muted":            d.muted,
-		"shuffle":          qs.Shuffle,
-		"repeat_mode":      qs.RepeatMode,
-		"queue":            qs.PriorityQueue,
-		"temporary_queue":  tq,
-		"current_playlist": d.currentPlaylist,
+		"type":                   "state",
+		"is_playing":             d.isPlaying,
+		"current_track":          qs.CurrentTrack,
+		"current_time":           d.currentTime,
+		"duration":               d.duration,
+		"volume":                 d.volume,
+		"muted":                  d.muted,
+		"shuffle":                qs.Shuffle,
+		"repeat_mode":            qs.RepeatMode,
+		"queue_length":           priorityLen,
+		"temporary_queue_length": tempLen,
+		"current_playlist":       d.currentPlaylist,
 	}
 	d.mu.RUnlock()
 
