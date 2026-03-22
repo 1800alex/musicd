@@ -463,38 +463,65 @@ func (a *App) setupGlobalKeys() {
 }
 
 func (a *App) showHelp() {
-	modal := tview.NewModal().
-		SetText(`[yellow]Keyboard Shortcuts[-]
+	helpText := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText(`
+ [yellow::b]Keyboard Shortcuts[-:-:-]
 
-[white]Navigation[-]
-  1/2/3    Tracks/Artists/Playlists
-  q        Queue
-  p        Now Playing
-  c        Connect/Settings
-  Enter/l  Select item
-  h/Esc    Go back
-  [/]      Prev/Next page
-  /        Search
+ [white::b]Navigation[-:-:-]
+ 1/2/3      Tracks / Artists / Playlists
+ q          Queue
+ p          Now Playing
+ c          Connect / Settings
+ Enter/l    Select item
+ h/Bksp     Go back
+ Esc        Go back / Clear search
+ [[]]/←→    Prev / Next page
+ /          Search
+ g/G        First / Last row
 
-[white]Playback[-]
-  Space    Play/Pause
-  n        Next track
-  N        Previous track
-  f/b      Seek forward/back 10s
-  F/B      Seek forward/back 30s
-  +/-      Volume up/down
-  m        Mute
-  s        Shuffle
-  r        Repeat (Off/All/One)
-  a        Play all (on detail pages)
+ [white::b]Playback[-:-:-]
+ Space      Play / Pause
+ n/N        Next / Previous track
+ ←/→        Next / Prev (Now Playing)
+ f/b        Seek ±10s
+ F/B        Seek ±30s
+ +/-        Volume up / down
+ m          Mute
+ s          Shuffle
+ r          Repeat (Off/All/One)
+ a          Play all (detail pages)
 
-  ?        This help
-  Ctrl+C   Quit`).
-		AddButtons([]string{"Close"}).
-		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+ ?          This help
+ Ctrl+C     Quit
+
+ [gray]Press Esc or ? to close[-]`)
+	helpText.SetBorder(true).SetTitle(" Help ")
+	helpText.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEscape:
 			a.pages.RemovePage("help")
-		})
-	a.pages.AddPage("help", modal, true, true)
+			return nil
+		case tcell.KeyRune:
+			if event.Rune() == '?' {
+				a.pages.RemovePage("help")
+				return nil
+			}
+		}
+		return event
+	})
+
+	// Center the help text in a fixed-size box
+	helpBox := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
+			AddItem(nil, 0, 1, false).
+			AddItem(helpText, 46, 0, true).
+			AddItem(nil, 0, 1, false),
+			30, 0, true).
+		AddItem(nil, 0, 1, false)
+
+	a.pages.AddPage("help", helpBox, true, true)
 }
 
 // Run starts the TUI application.
