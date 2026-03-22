@@ -167,7 +167,7 @@ func (p *TracksPage) Load() {
 			p.pagination.UpdateFromResponse(resp.Page, resp.TotalPages, resp.Total)
 			p.tracks = tracks
 			p.renderTable()
-			p.statusLine.SetText(fmt.Sprintf("[white]%s  |  /: search  Enter/l: play  [[]/[]]/<-/->: pages  h: back",
+			p.statusLine.SetText(fmt.Sprintf("[white]%s  |  /: search  Enter/l: play  [] ←→: pages  h: back",
 				p.pagination.StatusText()))
 		})
 	}()

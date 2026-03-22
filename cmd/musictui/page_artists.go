@@ -170,7 +170,7 @@ func (p *ArtistsPage) Load() {
 			p.pagination.UpdateFromResponse(resp.Page, resp.TotalPages, resp.Total)
 			p.artists = artists
 			p.renderTable()
-			p.statusLine.SetText(fmt.Sprintf("[white]%s  |  /: search  Enter/l: open  [[]/[]]/<-/->: pages  h: back",
+			p.statusLine.SetText(fmt.Sprintf("[white]%s  |  /: search  Enter/l: open  [] ←→: pages  h: back",
 				p.pagination.StatusText()))
 		})
 	}()
