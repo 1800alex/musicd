@@ -125,6 +125,9 @@ func (p *ArtistDetailPage) focusAlbums() {
 }
 
 func (p *ArtistDetailPage) focusTracks() {
+	if len(p.filteredTracks) == 0 {
+		return
+	}
 	p.focusedPanel = 1
 	p.albumTable.SetBorderColor(tcell.ColorDefault)
 	p.trackTable.SetBorderColor(tcell.ColorWhite)
@@ -239,7 +242,9 @@ func (p *ArtistDetailPage) selectAlbum(row int) {
 	p.allTracks = p.albumEntries[idx].tracks
 	p.applyFilter()
 	p.updateAlbumHighlight()
-	p.focusTracks()
+	if len(p.filteredTracks) > 0 {
+		p.focusTracks()
+	}
 }
 
 func (p *ArtistDetailPage) selectTrack(row int) {
@@ -438,6 +443,10 @@ func (p *ArtistDetailPage) renderTrackTable() {
 	}
 
 	if len(p.filteredTracks) > 0 {
+		p.trackTable.SetSelectable(true, false)
 		p.trackTable.Select(1, 0)
+	} else {
+		// Disable selection on empty table to prevent tview spin
+		p.trackTable.SetSelectable(false, false)
 	}
 }
