@@ -229,6 +229,7 @@ func (p *TracksPage) renderTable() {
 	}
 
 	if len(p.tracks) > 0 {
+		p.table.ScrollToBeginning()
 		for i, t := range p.tracks {
 			if t.ID == currentTrackID {
 				p.table.Select(i+1, 0)

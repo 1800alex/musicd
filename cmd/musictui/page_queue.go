@@ -126,6 +126,7 @@ func (p *QueuePage) renderTable(state *PlayerState) {
 	}
 
 	if len(p.tracks) > 0 {
+		p.table.ScrollToBeginning()
 		// Try to select the current track
 		for i, t := range p.tracks {
 			if t.ID == currentTrackID {

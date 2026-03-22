@@ -159,6 +159,7 @@ func (p *AlbumDetailPage) renderTable() {
 	}
 
 	if len(p.album.Tracks) > 0 {
+		p.table.ScrollToBeginning()
 		p.table.Select(1, 0)
 	}
 }

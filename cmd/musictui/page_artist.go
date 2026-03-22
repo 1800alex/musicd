@@ -458,6 +458,7 @@ func (p *ArtistDetailPage) renderTrackTable() {
 
 	if len(p.filteredTracks) > 0 {
 		p.trackTable.SetSelectable(true, false)
+		p.trackTable.ScrollToBeginning()
 		// Try to select the current track
 		for i, t := range p.filteredTracks {
 			if t.ID == currentTrackID {
