@@ -94,6 +94,16 @@ func (p *ArtistsPage) setupKeys() {
 		case tcell.KeyEscape:
 			p.app.GoBack()
 			return nil
+		case tcell.KeyLeft:
+			if p.pagination.PrevPage() {
+				p.Load()
+			}
+			return nil
+		case tcell.KeyRight:
+			if p.pagination.NextPage() {
+				p.Load()
+			}
+			return nil
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case 'l':
@@ -160,7 +170,7 @@ func (p *ArtistsPage) Load() {
 			p.pagination.UpdateFromResponse(resp.Page, resp.TotalPages, resp.Total)
 			p.artists = artists
 			p.renderTable()
-			p.statusLine.SetText(fmt.Sprintf("[white]%s  |  /: search  Enter/l: open  [/]: pages  h: back",
+			p.statusLine.SetText(fmt.Sprintf("[white]%s  |  /: search  Enter/l: open  [[]/[]]/<-/->: pages  h: back",
 				p.pagination.StatusText()))
 		})
 	}()
