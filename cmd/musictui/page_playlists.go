@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"musicd/lib/types"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -12,9 +13,13 @@ import (
 type PlaylistsPage struct {
 	*tview.Flex
 	table     *tview.Table
+	searchBar *tview.InputField
 	status    *tview.TextView
 	app       *App
 	playlists []types.Playlist
+	filtered  []types.Playlist
+	search    string
+	searching bool
 }
 
 // NewPlaylistsPage creates a new playlists browse page.
@@ -29,6 +34,24 @@ func NewPlaylistsPage(app *App) *PlaylistsPage {
 		SetFixed(1, 0)
 	p.table.SetBorder(true).SetTitle(" Playlists ")
 
+	p.searchBar = tview.NewInputField().
+		SetLabel(" Search: ").
+		SetFieldWidth(40)
+	p.searchBar.SetDoneFunc(func(key tcell.Key) {
+		switch key {
+		case tcell.KeyEnter:
+			p.search = p.searchBar.GetText()
+			p.hideSearch()
+			p.applyFilter()
+		case tcell.KeyEscape:
+			if p.search != "" {
+				p.search = ""
+				p.applyFilter()
+			}
+			p.hideSearch()
+		}
+	})
+
 	p.status = tview.NewTextView().
 		SetDynamicColors(true).
 		SetTextAlign(tview.AlignCenter)
@@ -39,6 +62,53 @@ func NewPlaylistsPage(app *App) *PlaylistsPage {
 
 	p.setupKeys()
 	return p
+}
+
+func (p *PlaylistsPage) showSearch() {
+	if p.searching {
+		return
+	}
+	p.searching = true
+	p.searchBar.SetText(p.search)
+	p.Flex.Clear()
+	p.Flex.AddItem(p.searchBar, 1, 0, true).
+		AddItem(p.table, 0, 1, false).
+		AddItem(p.status, 1, 0, false)
+	p.app.tviewApp.SetFocus(p.searchBar)
+}
+
+func (p *PlaylistsPage) hideSearch() {
+	p.searching = false
+	p.Flex.Clear()
+	p.Flex.AddItem(p.table, 0, 1, true).
+		AddItem(p.status, 1, 0, false)
+	p.app.tviewApp.SetFocus(p.table)
+}
+
+func (p *PlaylistsPage) applyFilter() {
+	if p.search == "" {
+		p.filtered = p.playlists
+	} else {
+		q := strings.ToLower(p.search)
+		p.filtered = nil
+		for _, pl := range p.playlists {
+			if strings.Contains(strings.ToLower(pl.Name), q) ||
+				strings.Contains(strings.ToLower(pl.Description), q) {
+				p.filtered = append(p.filtered, pl)
+			}
+		}
+	}
+	p.renderTable()
+	p.updateStatus()
+}
+
+func (p *PlaylistsPage) updateStatus() {
+	searchHint := ""
+	if p.search != "" {
+		searchHint = fmt.Sprintf("  filter: \"%s\"", p.search)
+	}
+	p.status.SetText(fmt.Sprintf("[white]%d playlists%s  |  /: search  Enter/l: open  h: back",
+		len(p.filtered), searchHint))
 }
 
 func (p *PlaylistsPage) setupKeys() {
@@ -60,6 +130,9 @@ func (p *PlaylistsPage) setupKeys() {
 			case 'h':
 				p.app.GoBack()
 				return nil
+			case '/':
+				p.showSearch()
+				return nil
 			case 'G':
 				if count := p.table.GetRowCount(); count > 1 {
 					p.table.Select(count-1, 0)
@@ -76,10 +149,10 @@ func (p *PlaylistsPage) setupKeys() {
 
 func (p *PlaylistsPage) selectPlaylist(row int) {
 	idx := row - 1
-	if idx < 0 || idx >= len(p.playlists) {
+	if idx < 0 || idx >= len(p.filtered) {
 		return
 	}
-	pl := p.playlists[idx]
+	pl := p.filtered[idx]
 
 	// Clean up old detail page, create new one
 	p.app.pages.RemovePage("playlist-detail")
@@ -100,8 +173,7 @@ func (p *PlaylistsPage) Load() {
 				return
 			}
 			p.playlists = playlists
-			p.renderTable()
-			p.status.SetText(fmt.Sprintf("[white]%d playlists  |  Enter/l: open  h: back", len(playlists)))
+			p.applyFilter()
 		})
 	}()
 }
@@ -121,7 +193,7 @@ func (p *PlaylistsPage) renderTable() {
 		p.table.SetCell(0, i, cell)
 	}
 
-	for i, pl := range p.playlists {
+	for i, pl := range p.filtered {
 		row := i + 1
 		p.table.SetCell(row, 0, tview.NewTableCell(fmt.Sprintf("%d", i+1)).
 			SetTextColor(tcell.ColorGray).SetAlign(tview.AlignRight))
@@ -132,7 +204,7 @@ func (p *PlaylistsPage) renderTable() {
 			SetExpansion(1).SetTextColor(tcell.ColorGray))
 	}
 
-	if len(p.playlists) > 0 {
+	if len(p.filtered) > 0 {
 		p.table.Select(1, 0)
 	}
 }

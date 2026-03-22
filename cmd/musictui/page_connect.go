@@ -98,8 +98,9 @@ func (p *ConnectPage) selectSession(row int) {
 }
 
 func (p *ConnectPage) fetchSessions() {
-	// Apply the URL from the form
+	// Apply the URL from the form and persist it
 	p.app.client.BaseURL = p.urlInput.GetText()
+	SaveConfig(&Config{ServerURL: p.app.client.BaseURL})
 
 	p.status.SetText("[yellow]Loading sessions...")
 	go func() {
