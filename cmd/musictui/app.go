@@ -215,10 +215,14 @@ func (a *App) onStateUpdate(state PlayerState) {
 	a.tviewApp.QueueUpdateDraw(func() {
 		a.statusBar.Update(&state, state.CurrentTime)
 
-		// Update queue page if visible
+		// Update queue page if visible, preserving selection
 		if a.currentPage == "queue" {
-			if page, ok := a.pageMap["queue"]; ok {
-				page.Load()
+			if p, ok := a.pageMap["queue"].(*QueuePage); ok {
+				row, _ := p.table.GetSelection()
+				p.Load()
+				if row > 0 && row < p.table.GetRowCount() {
+					p.table.Select(row, 0)
+				}
 			}
 		}
 		// Update now playing page if visible
