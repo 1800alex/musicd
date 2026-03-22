@@ -187,13 +187,13 @@ func (p *ArtistsPage) Load() {
 func (p *ArtistsPage) renderTable() {
 	p.table.Clear()
 
-	headers := []string{"#", "Name", "Tracks"}
+	headers := []string{"#", "Name"}
 	for i, h := range headers {
 		cell := tview.NewTableCell(h).
 			SetTextColor(tcell.ColorYellow).
 			SetSelectable(false).
 			SetExpansion(1)
-		if i == 0 || i == 2 {
+		if i == 0 {
 			cell.SetExpansion(0)
 		}
 		p.table.SetCell(0, i, cell)
@@ -205,8 +205,6 @@ func (p *ArtistsPage) renderTable() {
 		p.table.SetCell(row, 0, tview.NewTableCell(fmt.Sprintf("%d", offset+i+1)).
 			SetTextColor(tcell.ColorGray).SetAlign(tview.AlignRight))
 		p.table.SetCell(row, 1, tview.NewTableCell(a.Name).SetExpansion(1))
-		p.table.SetCell(row, 2, tview.NewTableCell(fmt.Sprintf("%d", a.TrackCount)).
-			SetAlign(tview.AlignRight))
 	}
 
 	if len(p.artists) > 0 {
