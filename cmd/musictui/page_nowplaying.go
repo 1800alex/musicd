@@ -51,6 +51,12 @@ func (p *NowPlayingPage) setupKeys() {
 		case tcell.KeyEscape, tcell.KeyBackspace, tcell.KeyBackspace2:
 			p.app.GoBack()
 			return nil
+		case tcell.KeyLeft:
+			p.app.SendCommand("previous", nil)
+			return nil
+		case tcell.KeyRight:
+			p.app.SendCommand("next", nil)
+			return nil
 		case tcell.KeyRune:
 			if event.Rune() == 'h' {
 				p.app.GoBack()

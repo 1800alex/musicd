@@ -431,23 +431,26 @@ func (a *App) setupGlobalKeys() {
 				}
 				a.SendCommand("set_repeat", nextMode)
 				return nil
-			case 'q':
-				a.NavigateTo("queue")
-				return nil
-			case '1':
-				a.NavigateTo("tracks")
-				return nil
-			case '2':
-				a.NavigateTo("artists")
-				return nil
-			case '3':
-				a.NavigateTo("playlists")
-				return nil
-			case 'p':
-				a.NavigateTo("nowplaying")
-				return nil
 			case 'c':
 				a.NavigateTo("connect")
+				return nil
+			case 'q', '1', '2', '3', 'p':
+				// Require an active session for all pages except connect
+				if a.sessionID == "" {
+					return nil
+				}
+				switch event.Rune() {
+				case 'q':
+					a.NavigateTo("queue")
+				case '1':
+					a.NavigateTo("tracks")
+				case '2':
+					a.NavigateTo("artists")
+				case '3':
+					a.NavigateTo("playlists")
+				case 'p':
+					a.NavigateTo("nowplaying")
+				}
 				return nil
 			case '?':
 				a.showHelp()

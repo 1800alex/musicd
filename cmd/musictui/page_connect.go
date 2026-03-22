@@ -93,7 +93,7 @@ func (p *ConnectPage) selectSession(row int) {
 	if idx >= 0 && idx < len(p.sessions) {
 		s := p.sessions[idx]
 		p.app.ConnectToSession(s.ID, s.Name)
-		p.app.NavigateTo("tracks")
+		p.app.NavigateTo("nowplaying")
 	}
 }
 
