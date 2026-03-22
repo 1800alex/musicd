@@ -12,6 +12,7 @@ import (
 type ConnectPage struct {
 	*tview.Flex
 	form     *tview.Form
+	urlInput *tview.InputField
 	table    *tview.Table
 	status   *tview.TextView
 	app      *App
@@ -28,11 +29,16 @@ func NewConnectPage(app *App) *ConnectPage {
 		SetDynamicColors(true).
 		SetTextAlign(tview.AlignCenter)
 
-	p.form = tview.NewForm().
-		AddInputField("Server URL", app.client.BaseURL, 60, nil, nil).
-		AddButton("Fetch Sessions", func() {
-			p.fetchSessions()
-		})
+	p.urlInput = tview.NewInputField().
+		SetLabel("Server URL ").
+		SetText(app.client.BaseURL).
+		SetFieldWidth(60)
+
+	p.form = tview.NewForm()
+	p.form.AddFormItem(p.urlInput)
+	p.form.AddButton("Fetch Sessions", func() {
+		p.fetchSessions()
+	})
 	p.form.SetBorder(true).SetTitle(" Connection Settings ")
 
 	p.table = tview.NewTable().
@@ -48,7 +54,7 @@ func NewConnectPage(app *App) *ConnectPage {
 	p.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyTab:
-			app.tviewApp.SetFocus(p.form)
+			app.tviewApp.SetFocus(p.urlInput)
 			return nil
 		case tcell.KeyRune:
 			switch event.Rune() {
@@ -93,8 +99,7 @@ func (p *ConnectPage) selectSession(row int) {
 
 func (p *ConnectPage) fetchSessions() {
 	// Apply the URL from the form
-	url := p.form.GetFormItemByLabel("Server URL").(*tview.InputField).GetText()
-	p.app.client.BaseURL = url
+	p.app.client.BaseURL = p.urlInput.GetText()
 
 	p.status.SetText("[yellow]Loading sessions...")
 	go func() {
@@ -157,9 +162,7 @@ func (p *ConnectPage) renderTable() {
 // Load updates the status display and fetches sessions.
 func (p *ConnectPage) Load() {
 	// Update the URL field to current value
-	if item := p.form.GetFormItemByLabel("Server URL"); item != nil {
-		item.(*tview.InputField).SetText(p.app.client.BaseURL)
-	}
+	p.urlInput.SetText(p.app.client.BaseURL)
 
 	if p.app.sessionID != "" {
 		name := p.app.sessionName
@@ -170,6 +173,9 @@ func (p *ConnectPage) Load() {
 	} else {
 		p.status.SetText("[gray]Not connected  |  Fetch sessions to connect")
 	}
+
+	// Focus the URL input so it's immediately editable
+	p.app.tviewApp.SetFocus(p.urlInput)
 
 	// Auto-fetch sessions on load
 	p.fetchSessions()
